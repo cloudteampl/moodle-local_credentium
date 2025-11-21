@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/credentium/db" VERSION="20250129" COMMENT="XMLDB file for Moodle local/credentium"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_credentium_issuances" COMMENT="Track all credential issuances">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="User ID who received the credential"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course ID for which credential was issued"/>
+        <FIELD NAME="templateid" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Credentium template ID used"/>
+        <FIELD NAME="credentialid" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="External credential ID from Credentium"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="pending" SEQUENCE="false" COMMENT="Status: pending, issued, failed, retrying"/>
+        <FIELD NAME="attempts" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Number of issuance attempts"/>
+        <FIELD NAME="errorcode" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="Error code if failed"/>
+        <FIELD NAME="errormessage" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Error message if failed"/>
+        <FIELD NAME="grade" TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="false" SEQUENCE="false" COMMENT="Grade at time of issuance"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timeissued" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Time when credential was successfully issued"/>
+        <FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Category ID used for this issuance (for rate limiting)"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="status" UNIQUE="false" FIELDS="status"/>
+        <INDEX NAME="credentialid" UNIQUE="false" FIELDS="credentialid"/>
+        <INDEX NAME="userid-courseid" UNIQUE="false" FIELDS="userid, courseid"/>
+        <INDEX NAME="categoryid" UNIQUE="false" FIELDS="categoryid"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="local_credentium_course_config" COMMENT="Store course-level settings">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course ID"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether Credentium is enabled for this course"/>
+        <FIELD NAME="templateid" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Selected credential template ID"/>
+        <FIELD NAME="sendgrade" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether to send grade with credential"/>
+        <FIELD NAME="mingrade" TYPE="number" LENGTH="10" DECIMALS="5" NOTNULL="false" SEQUENCE="false" COMMENT="Minimum grade required (percentage)"/>
+        <FIELD NAME="issuancetrigger" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="completion" SEQUENCE="false" COMMENT="When to issue: always completion"/>
+        <FIELD NAME="inherit_category" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether to inherit category config (1) or use course-specific config (0)"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign-unique" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="inherit_category" UNIQUE="false" FIELDS="inherit_category"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="local_credentium_templates_cache" COMMENT="Cache credential templates from API">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="templateid" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Template ID from Credentium"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Template name"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Template description"/>
+        <FIELD NAME="data" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Additional template metadata (JSON)"/>
+        <FIELD NAME="active" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether template is active"/>
+        <FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Category ID for template cache isolation (null=global)"/>
+        <FIELD NAME="timecached" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="templateid-categoryid" UNIQUE="true" FIELDS="templateid, categoryid"/>
+        <INDEX NAME="active" UNIQUE="false" FIELDS="active"/>
+        <INDEX NAME="categoryid" UNIQUE="false" FIELDS="categoryid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_credentium_category_config" COMMENT="Store category-level Credentium configuration">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Category ID"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether Credentium is enabled for this category"/>
+        <FIELD NAME="apiurl" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Category-specific API URL"/>
+        <FIELD NAME="apikey" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Category-specific API key (encrypted)"/>
+        <FIELD NAME="paused" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Pause all issuances for this category"/>
+        <FIELD NAME="ratelimit" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Maximum credentials per hour for this category"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="categoryid" TYPE="foreign-unique" FIELDS="categoryid" REFTABLE="course_categories" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="enabled" UNIQUE="false" FIELDS="enabled"/>
+        <INDEX NAME="paused" UNIQUE="false" FIELDS="paused"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
