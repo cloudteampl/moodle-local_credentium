@@ -1,6 +1,6 @@
 # Credentium® Integration for Moodle
 
-**Version:** 2.1.1
+**Version:** 2.0.0alpha
 **Author:** CloudTeam Sp. z o.o.
 **License:** GNU GPL v3 or later (Plugin is FREE)
 **Moodle Compatibility:** 4.5+ and 5.0
@@ -37,22 +37,10 @@ This plugin is **free and open source**, but it requires an active **paid subscr
 
 ## Installation
 
-### Fresh Installation
-
 1. Download the latest release ZIP from the repository
 2. Extract to `{moodle_root}/local/credentium/`
 3. Visit **Site Administration > Notifications** to complete installation
 4. Configure global settings at **Site Administration > Plugins > Local plugins > Credentium®**
-
-### Upgrade from v1.x
-
-1. Backup your Moodle database before upgrading
-2. Replace the plugin files with v2.0.0
-3. Visit **Site Administration > Notifications** to run upgrade
-4. Optionally enable category mode in plugin settings
-5. Test credential issuance in a staging course
-
-**Note:** Downgrading from v2.0 to v1.x is not supported due to database schema changes.
 
 ## Configuration
 
@@ -150,12 +138,12 @@ Use the provided deployment script:
 ./deploy.sh
 ```
 
-This creates `dist/local_credentium-2.1.1.zip` ready for installation.
+This creates `dist/local_credentium-2.0.0alpha.zip` ready for installation.
 
 ## Support
 
 **Developer:** CloudTeam Sp. z o.o.
-**Repository:** https://github.com/cloudteampl/ct-credentium-moodle
+**Repository:** https://github.com/cloudteampl/moodle-local_credentium
 
 For issues and feature requests, please use the GitHub issue tracker.
 
