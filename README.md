@@ -90,7 +90,7 @@ This plugin communicates with the **Credentium® API** (a paid third-party servi
 
 **Service Provider:** Credentium® (https://credentium.com) - Commercial SaaS platform
 
-**Privacy:** The Credentium® service operates independently with its own privacy policy. Please review Credentium®'s privacy policy at https://credentium.com/privacy before using this plugin.
+**Privacy:** The Credentium® service operates independently with its own privacy policy. Please review Credentium®'s privacy policy at https://legal.cloudteam.global/credentium/privacy-policy before using this plugin.
 
 **Data Retention:** Credential issuance records are stored locally in your Moodle database for reporting purposes. External data retention is controlled by Credentium®.
 
