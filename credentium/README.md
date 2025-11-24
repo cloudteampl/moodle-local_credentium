@@ -122,7 +122,9 @@ When a credential is issued, the following data is sent to Credentium® API:
 
 ## Permissions & Capabilities
 
-The plugin defines five capabilities to control access to different features:
+The plugin defines five capabilities to control access to different features.
+
+**IMPORTANT: No roles are created automatically during installation.** All capabilities are assigned to the "Manager" archetype by default. You must manually grant permissions to other roles (like Teacher) if needed.
 
 ### Capabilities Overview
 
@@ -170,18 +172,35 @@ If you want teachers to configure Credentium for their courses:
 
 ### Creating Custom Roles
 
-You can create specialized roles for credential management:
+You can create specialized roles for credential management.
 
-**Example: "Credentium Course Manager" role**
+**Option 1: Using CLI Script (Recommended)**
+
+The plugin includes a CLI script to automatically create a "Credentium Course Manager" role:
+
+```bash
+cd /path/to/moodle
+php local/credentium/cli/create_role.php
+```
+
+This creates a role with:
+- Short name: `credentiumcoursemanager`
+- Full name: `Credentium Course Manager`
+- Description: `Can configure digital credentials for courses`
+- Capability: `local/credentium:managecourse`
+- Assignable at: Course and Category levels
+
+**Option 2: Manual Creation via Web Interface**
 
 1. Go to: Site Administration > Users > Permissions > Define roles
 2. Click "Add a new role"
 3. Use existing role: "Teacher"
-4. Set Short name: `credentiummanager`
+4. Set Short name: `credentiumcoursemanager`
 5. Set Custom full name: `Credentium Course Manager`
 6. Set Description: `Can configure digital credentials for courses`
 7. Grant only: `local/credentium:managecourse`
 8. Save changes
+9. Set context levels: Check "Course" and "Category"
 
 Then assign this role to specific users at course or category level.
 
