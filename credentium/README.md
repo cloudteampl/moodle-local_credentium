@@ -136,6 +136,72 @@ The plugin defines five capabilities to control access to different features.
 | `local/credentium:viewreports` | View credential issuance reports | Manager | System |
 | `local/credentium:viewowncredentials` | View own issued credentials | User (all authenticated users) | User |
 
+### Capabilities Detailed Description
+
+#### `local/credentium:manage`
+- **Purpose**: Access to global plugin configuration
+- **Grants access to**:
+  - Site Administration > Plugins > Local plugins > Credentium® (global settings page)
+  - Enable/disable plugin globally
+  - Configure global API credentials (URL and API Key)
+  - Enable/disable category mode
+  - Configure data retention period
+  - Enable/disable debug logging
+  - Test API connection
+- **Context**: System-level only
+- **Default assignment**: Manager role
+- **Clones permissions from**: `moodle/site:config` (site administrators have this by default)
+
+#### `local/credentium:managecourse`
+- **Purpose**: Configure credential issuance for individual courses
+- **Grants access to**:
+  - Course > Credentium® Settings page (`/local/credentium/course_settings.php`)
+  - Enable/disable Credentium for specific courses
+  - Select credential template from available templates
+  - View which category's API credentials are being used
+  - Refresh template cache
+- **Context**: Course-level
+- **Default assignment**: Manager role only (NOT Teachers)
+- **Note**: This is the capability teachers typically need to manage credentials in their courses
+
+#### `local/credentium:managecategory`
+- **Purpose**: Configure category-specific API credentials (multi-tenant mode)
+- **Grants access to**:
+  - Category > Credentium® Category Settings page (`/local/credentium/category_settings.php`)
+  - Enable Credentium for entire category
+  - Configure category-specific API URL and API Key (encrypted)
+  - Choose between global or custom API credentials
+  - Pause all credential issuance for category
+  - Set rate limits (maximum credentials per hour)
+- **Context**: Course category level
+- **Default assignment**: Manager role
+- **Availability**: Only visible when category mode is enabled in global settings
+
+#### `local/credentium:viewreports`
+- **Purpose**: Access to credential issuance reports and analytics
+- **Grants access to**:
+  - Site Administration > Reports > Credentium® Report (`/local/credentium/index.php`)
+  - View all credential issuance records across all courses
+  - Filter by status (issued, failed, pending, retrying)
+  - Filter by course, user, date range
+  - Export reports
+  - Retry failed issuances
+  - Bulk process pending credentials
+- **Context**: System-level
+- **Default assignment**: Manager role
+- **Note**: Shows data from all courses site-wide
+
+#### `local/credentium:viewowncredentials`
+- **Purpose**: Students can view their own issued credentials
+- **Grants access to**:
+  - View individual credential details (`/local/credentium/view.php`)
+  - See credential status (issued, failed, pending)
+  - View issuance date and credential ID
+  - Access external credential link (if available)
+- **Context**: User-level
+- **Default assignment**: User archetype (all authenticated users)
+- **Privacy**: Users can only view their own credentials, not others'
+
 ### Default Permissions
 
 **By default, only site administrators and managers can configure the plugin:**

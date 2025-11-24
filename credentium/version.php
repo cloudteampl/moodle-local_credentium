@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_credentium';
-$plugin->version = 2025112135;
+$plugin->version = 2025112136;
 $plugin->requires = 2023100900; // Moodle 4.5+
 $plugin->maturity = MATURITY_STABLE;
 $plugin->release = '2.0.0';
