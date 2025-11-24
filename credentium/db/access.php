@@ -25,9 +25,10 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
-    
+
     // Manage global Credentium settings.
     'local/credentium:manage' => [
+        'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes' => [
@@ -35,11 +36,12 @@ $capabilities = [
         ],
         'clonepermissionsfrom' => 'moodle/site:config',
     ],
-    
+
     // Manage course-level Credentium settings.
     // Note: Only granted to managers by default. Assign the "Credentium Course Manager" role
     // to specific users at course or category level to grant this permission.
     'local/credentium:managecourse' => [
+        'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
@@ -49,6 +51,7 @@ $capabilities = [
 
     // Manage category-level Credentium settings.
     'local/credentium:managecategory' => [
+        'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSECAT,
         'archetypes' => [
@@ -58,15 +61,17 @@ $capabilities = [
 
     // View Credentium reports.
     'local/credentium:viewreports' => [
+        'riskbitmask' => RISK_PERSONAL,
         'captype' => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes' => [
             'manager' => CAP_ALLOW,
         ],
     ],
-    
+
     // View own credentials.
     'local/credentium:viewowncredentials' => [
+        'riskbitmask' => RISK_PERSONAL,
         'captype' => 'read',
         'contextlevel' => CONTEXT_USER,
         'archetypes' => [
