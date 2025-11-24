@@ -60,9 +60,9 @@ if ($categoryid) {
     if ($config && $config->enabled) {
         $apiurl = $config->apiurl;
         $apikey = $config->apikey;
-        $source = "Category: {$category->name}";
+        $source = get_string('testconnection_category_prefix', 'local_credentium', $category->name);
     } else {
-        echo $OUTPUT->notification('Category configuration not found or not enabled.', 'notifyproblem');
+        echo $OUTPUT->notification(get_string('testconnection_category_notfound', 'local_credentium'), 'notifyproblem');
         echo $OUTPUT->footer();
         die();
     }
@@ -70,7 +70,7 @@ if ($categoryid) {
     // Get global credentials
     $apiurl = get_config('local_credentium', 'apiurl');
     $apikey = get_config('local_credentium', 'apikey');
-    $source = "Global Configuration";
+    $source = get_string('testconnection_global_config', 'local_credentium');
 }
 
 // Log connection test (without sensitive data)
@@ -82,32 +82,32 @@ local_credentium_log('Testing connection', [
 ]);
 
 echo $OUTPUT->box_start('generalbox boxwidthwide boxaligncenter');
-echo html_writer::tag('p', html_writer::tag('strong', 'Credentials Source: ') . s($source));
-echo html_writer::tag('p', html_writer::tag('strong', 'API URL: ') .
-    (!empty($apiurl) ? s($apiurl) : html_writer::tag('em', 'Not configured')));
-echo html_writer::tag('p', html_writer::tag('strong', 'API Key: ') .
-    (!empty($apikey) ? str_repeat('*', 20) . s(substr($apikey, -4)) : html_writer::tag('em', 'Not configured')));
+echo html_writer::tag('p', html_writer::tag('strong', get_string('testconnection_credentials_source', 'local_credentium') . ' ') . s($source));
+echo html_writer::tag('p', html_writer::tag('strong', get_string('testconnection_apiurl_label', 'local_credentium') . ' ') .
+    (!empty($apiurl) ? s($apiurl) : html_writer::tag('em', get_string('testconnection_notconfigured', 'local_credentium'))));
+echo html_writer::tag('p', html_writer::tag('strong', get_string('testconnection_apikey_label', 'local_credentium') . ' ') .
+    (!empty($apikey) ? str_repeat('*', 20) . s(substr($apikey, -4)) : html_writer::tag('em', get_string('testconnection_notconfigured', 'local_credentium'))));
 echo $OUTPUT->box_end();
 
 try {
-    echo html_writer::tag('p', 'Attempting to fetch templates from the API...');
+    echo html_writer::tag('p', get_string('testconnection_attempting', 'local_credentium'));
 
     // Explicitly pass the fresh config values to bypass any caching
     $client = new \local_credentium\api\client($apiurl, $apikey);
-    
+
     // Clear template cache to force fresh API call
     global $DB;
     $DB->delete_records('local_credentium_templates_cache');
-    
+
     $templates = $client->get_templates(false);
     $templatecount = count($templates);
 
-    echo $OUTPUT->notification("Found {$templatecount} credential template(s).", 'notifysuccess');
+    echo $OUTPUT->notification(get_string('testconnection_found_templates', 'local_credentium', $templatecount), 'notifysuccess');
 
     if ($templatecount > 0) {
         echo $OUTPUT->notification(get_string('connectionsuccessful', 'local_credentium'), 'notifysuccess');
         echo $OUTPUT->box_start('generalbox boxwidthwide boxaligncenter');
-        echo html_writer::tag('h4', 'Templates Found:');
+        echo html_writer::tag('h4', get_string('testconnection_templates_heading', 'local_credentium'));
         $list = [];
         foreach ($templates as $template) {
             $list[] = s($template->title) . ' (ID: ' . s($template->id) . ')';
@@ -115,7 +115,7 @@ try {
         echo html_writer::alist($list);
         echo $OUTPUT->box_end();
     } else {
-        echo $OUTPUT->notification("The API connection was successful, but the server returned 0 templates. Please verify your API key has access to templates.", 'notifyproblem');
+        echo $OUTPUT->notification(get_string('testconnection_no_templates', 'local_credentium'), 'notifyproblem');
     }
 
 } catch (\Exception $e) {
@@ -124,7 +124,7 @@ try {
     $debuginfo = $e->debuginfo ?? null;
     if (!empty($debuginfo)) {
         echo $OUTPUT->box_start('generalbox boxwidthwide boxaligncenter error');
-        echo html_writer::tag('h3', 'Detailed Debug Information');
+        echo html_writer::tag('h3', get_string('testconnection_debug_heading', 'local_credentium'));
         echo html_writer::tag('pre', s($debuginfo));
         echo $OUTPUT->box_end();
     }
