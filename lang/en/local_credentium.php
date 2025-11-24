@@ -134,6 +134,7 @@ $string['credentium:manage'] = 'Manage Credentium settings';
 $string['credentium:managecourse'] = 'Manage course Credentium settings';
 $string['credentium:managecategory'] = 'Manage category Credentium settings';
 $string['credentium:viewreports'] = 'View Credentium reports';
+$string['credentium:viewowncredentials'] = 'View own credentials';
 
 // Events.
 $string['eventcredentialissued'] = 'Credential issued';

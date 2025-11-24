@@ -117,7 +117,7 @@ class local_credentium_admin_settings_form extends moodleform {
         $mform->hideIf('dataretention', 'enabled', 'notchecked');
 
         // Action buttons.
-        $this->add_action_buttons();
+        $this->add_action_buttons(true, get_string('savechanges'));
     }
 
     public function validation($data, $files) {
@@ -172,7 +172,7 @@ $mform->set_data($config);
 
 // Handle form submission.
 if ($mform->is_cancelled()) {
-    redirect(new moodle_url('/admin/settings.php', ['section' => 'localplugins']));
+    redirect(new moodle_url('/admin/plugins.php', ['subtype' => 'local']));
 } else if ($data = $mform->get_data()) {
     // Save settings
     set_config('enabled', !empty($data->enabled) ? 1 : 0, 'local_credentium');

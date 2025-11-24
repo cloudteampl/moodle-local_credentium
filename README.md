@@ -120,6 +120,178 @@ When a credential is issued, the following data is sent to Credentium® API:
 
 **Note:** Downgrading from v2.0 to v1.x is not supported due to database schema changes.
 
+## Permissions & Capabilities
+
+The plugin defines five capabilities to control access to different features.
+
+**IMPORTANT: No roles are created automatically during installation.** All capabilities are assigned to the "Manager" archetype by default. You must manually grant permissions to other roles (like Teacher) if needed.
+
+### Capabilities Overview
+
+| Capability | Description | Default Role | Context Level |
+|------------|-------------|--------------|---------------|
+| `local/credentium:manage` | Manage global plugin settings | Manager | System |
+| `local/credentium:managecourse` | Configure credentials for courses | Manager | Course |
+| `local/credentium:managecategory` | Configure credentials for categories | Manager | Category |
+| `local/credentium:viewreports` | View credential issuance reports | Manager | System |
+| `local/credentium:viewowncredentials` | View own issued credentials | User (all authenticated users) | User |
+
+### Capabilities Detailed Description
+
+#### `local/credentium:manage`
+- **Purpose**: Access to global plugin configuration
+- **Grants access to**:
+  - Site Administration > Plugins > Local plugins > Credentium® (global settings page)
+  - Enable/disable plugin globally
+  - Configure global API credentials (URL and API Key)
+  - Enable/disable category mode
+  - Configure data retention period
+  - Enable/disable debug logging
+  - Test API connection
+- **Context**: System-level only
+- **Default assignment**: Manager role
+- **Clones permissions from**: `moodle/site:config` (site administrators have this by default)
+
+#### `local/credentium:managecourse`
+- **Purpose**: Configure credential issuance for individual courses
+- **Grants access to**:
+  - Course > Credentium® Settings page (`/local/credentium/course_settings.php`)
+  - Enable/disable Credentium for specific courses
+  - Select credential template from available templates
+  - View which category's API credentials are being used
+  - Refresh template cache
+- **Context**: Course-level
+- **Default assignment**: Manager role only (NOT Teachers)
+- **Note**: This is the capability teachers typically need to manage credentials in their courses
+
+#### `local/credentium:managecategory`
+- **Purpose**: Configure category-specific API credentials (multi-tenant mode)
+- **Grants access to**:
+  - Category > Credentium® Category Settings page (`/local/credentium/category_settings.php`)
+  - Enable Credentium for entire category
+  - Configure category-specific API URL and API Key (encrypted)
+  - Choose between global or custom API credentials
+  - Pause all credential issuance for category
+  - Set rate limits (maximum credentials per hour)
+- **Context**: Course category level
+- **Default assignment**: Manager role
+- **Availability**: Only visible when category mode is enabled in global settings
+
+#### `local/credentium:viewreports`
+- **Purpose**: Access to credential issuance reports and analytics
+- **Grants access to**:
+  - Site Administration > Reports > Credentium® Report (`/local/credentium/index.php`)
+  - View all credential issuance records across all courses
+  - Filter by status (issued, failed, pending, retrying)
+  - Filter by course, user, date range
+  - Export reports
+  - Retry failed issuances
+  - Bulk process pending credentials
+- **Context**: System-level
+- **Default assignment**: Manager role
+- **Note**: Shows data from all courses site-wide
+
+#### `local/credentium:viewowncredentials`
+- **Purpose**: Students can view their own issued credentials
+- **Grants access to**:
+  - View individual credential details (`/local/credentium/view.php`)
+  - See credential status (issued, failed, pending)
+  - View issuance date and credential ID
+  - Access external credential link (if available)
+- **Context**: User-level
+- **Default assignment**: User archetype (all authenticated users)
+- **Privacy**: Users can only view their own credentials, not others'
+
+### Default Permissions
+
+**By default, only site administrators and managers can configure the plugin:**
+
+- **Site Administrators** (site config capability): Full access to all plugin features
+- **Managers**: Can configure global settings, course settings, category settings, and view reports
+- **Teachers**: No access by default (cannot configure courses)
+- **All Users**: Can view their own issued credentials
+
+### Granting Permissions to Teachers
+
+If you want teachers to configure Credentium for their courses:
+
+**Option 1: Assign capability at course level**
+1. Go to a course
+2. Navigate to: Participants > Permissions
+3. Search for "credentium"
+4. Click on `local/credentium:managecourse`
+5. Grant "Allow" to the "Teacher" role
+
+**Option 2: Assign capability at category level (affects all courses)**
+1. Go to a course category
+2. Navigate to: Permissions
+3. Search for "credentium"
+4. Click on `local/credentium:managecourse`
+5. Grant "Allow" to the "Teacher" role
+
+**Option 3: Modify the Teacher role globally**
+1. Go to: Site Administration > Users > Permissions > Define roles
+2. Edit the "Teacher" role
+3. Search for "credentium"
+4. Grant "Allow" to `local/credentium:managecourse`
+5. Save changes
+
+### Creating Custom Roles
+
+You can create specialized roles for credential management.
+
+**Option 1: Using CLI Script (Recommended)**
+
+The plugin includes a CLI script to automatically create a "Credentium Course Manager" role:
+
+```bash
+cd /path/to/moodle
+php local/credentium/cli/create_role.php
+```
+
+This creates a role with:
+- Short name: `credentiumcoursemanager`
+- Full name: `Credentium Course Manager`
+- Description: `Can configure digital credentials for courses`
+- Capability: `local/credentium:managecourse`
+- Assignable at: Course and Category levels
+
+**Option 2: Manual Creation via Web Interface**
+
+1. Go to: Site Administration > Users > Permissions > Define roles
+2. Click "Add a new role"
+3. Use existing role: "Teacher"
+4. Set Short name: `credentiumcoursemanager`
+5. Set Custom full name: `Credentium Course Manager`
+6. Set Description: `Can configure digital credentials for courses`
+7. Grant only: `local/credentium:managecourse`
+8. Save changes
+9. Set context levels: Check "Course" and "Category"
+
+Then assign this role to specific users at course or category level.
+
+### Multi-Tenant Permission Model (v2.0)
+
+When **category mode** is enabled:
+
+- **Category Managers**: Need `local/credentium:managecategory` to configure category-specific API credentials
+- **Course Managers**: Need `local/credentium:managecourse` to select credential templates
+- Courses automatically inherit API credentials from their parent category (up to 10 levels)
+- Category credentials are encrypted at rest for security
+
+### Troubleshooting Permissions
+
+**Issue**: "You do not have permission to configure Credentium for this course"
+
+**Solution**: The user needs `local/credentium:managecourse` capability at the course level. Assign it using one of the options above.
+
+**Issue**: Teachers can't see Credentium menu in course navigation
+
+**Solution**: Check that:
+1. Plugin is enabled globally
+2. User has `local/credentium:managecourse` capability
+3. Course navigation cache may need clearing (Site Administration > Development > Purge all caches)
+
 ## Configuration
 
 ### Global Settings
