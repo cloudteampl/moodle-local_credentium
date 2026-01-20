@@ -182,5 +182,19 @@ function xmldb_local_credentium_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025112103, 'local', 'credentium');
     }
 
+    if ($oldversion < 2026012100) {
+        // Add timecompleted column to track when course completion event fired.
+        // This is needed for grade freshness checking to fix the race condition
+        // where credentials were issued with stale grades.
+        $table = new xmldb_table('local_credentium_issuances');
+        $field = new xmldb_field('timecompleted', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'categoryid');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026012100, 'local', 'credentium');
+    }
+
     return true;
 }

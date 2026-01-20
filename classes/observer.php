@@ -40,20 +40,20 @@ class observer {
         $courseid = $event->courseid;
         $userid = $event->relateduserid;
 
-        // Validate event data
+        // Validate event data.
         if (empty($courseid) || empty($userid)) {
             local_credentium_log('Invalid event data - missing courseid or userid');
             return;
         }
 
-        // Get resolved course config with category inheritance
+        // Get resolved course config with category inheritance.
         $config = local_credentium_resolve_course_config($courseid);
 
         if (!$config || !$config->enabled) {
             return;
         }
 
-        // Check if category config is paused
+        // Check if category config is paused.
         if (!empty($config->paused)) {
             local_credentium_log('Issuance skipped - category is paused', [
                 'courseid' => $courseid,
@@ -62,67 +62,85 @@ class observer {
             return;
         }
 
-        // Always use completion trigger now
+        // Always use completion trigger now.
         if ($config->issuancetrigger !== 'completion') {
             return;
         }
 
-        // Check if already issued
-        $existing = $DB->get_record('local_credentium_issuances', [
-            'userid' => $userid,
-            'courseid' => $courseid,
-            'status' => 'issued',
-        ]);
+        // Acquire lock to prevent race condition duplicates.
+        // NOTE: Requires site to have a working lock backend (DB lock is default and works fine).
+        $lockfactory = \core\lock\lock_config::get_lock_factory('local_credentium');
+        $lockkey = "issue_{$courseid}_{$userid}";
+        $lock = $lockfactory->get_lock($lockkey, 10); // 10 second timeout.
 
-        if ($existing) {
+        if (!$lock) {
+            local_credentium_log('Could not acquire lock, skipping', [
+                'courseid' => $courseid,
+                'userid' => $userid
+            ]);
             return;
         }
 
-        // Get the course grade using grade_get_course_grade
-        require_once($CFG->libdir . '/gradelib.php');
-        require_once($CFG->dirroot . '/grade/querylib.php');
-
-        // Try to get the course grade
         try {
-            $course_grade = \grade_get_course_grade($userid, $courseid);
-        } catch (\Exception $e) {
-            local_credentium_log('Error getting course grade', ['error' => $e->getMessage()]);
-            $course_grade = null;
+            // Check for existing pending/retrying/issued record (inside lock).
+            $existing = $DB->get_record_select('local_credentium_issuances',
+                'userid = :userid AND courseid = :courseid AND status IN (:s1, :s2, :s3)',
+                ['userid' => $userid, 'courseid' => $courseid,
+                 's1' => 'pending', 's2' => 'retrying', 's3' => 'issued']
+            );
+
+            if ($existing) {
+                local_credentium_log('Skipping duplicate issuance', [
+                    'userid' => $userid,
+                    'courseid' => $courseid,
+                    'existing_status' => $existing->status
+                ]);
+                return;
+            }
+
+            // Create issuance record.
+            // IMPORTANT: Never fetch grade at event time - it may be stale.
+            // Grade will ONLY be fetched in the background task after freshness check.
+            $eventdata = $event->get_data();
+            $timecompleted = $eventdata['timecreated']; // Event timestamp.
+
+            $issuance = new \stdClass();
+            $issuance->userid = $userid;
+            $issuance->courseid = $courseid;
+            $issuance->templateid = $config->templateid;
+            $issuance->status = 'pending';
+            $issuance->attempts = 0;
+            $issuance->grade = null;  // Never store grade at event time.
+            $issuance->timecompleted = $timecompleted;
+            $issuance->categoryid = $config->categoryid ?? null;
+            $issuance->timecreated = time();
+            $issuance->timemodified = time();
+
+            $issuance->id = $DB->insert_record('local_credentium_issuances', $issuance);
+
+            // Queue task with consistent identity for reschedule matching.
+            // Use fully-qualified class name for correct task identity.
+            $task = new \local_credentium\task\issue_credential();
+            $task->set_custom_data([
+                'issuanceid' => $issuance->id,
+                'categoryid' => $issuance->categoryid
+            ]);
+            $task->set_userid(0);  // Consistent: always run as admin/system.
+            $task->set_component('local_credentium');  // Explicit component.
+            $task->set_next_run_time(time() + 15);  // Always 15s delay for grade aggregation.
+
+            \core\task\manager::queue_adhoc_task($task);
+
+            local_credentium_log('Queued credential issuance task', [
+                'issuanceid' => $issuance->id,
+                'userid' => $userid,
+                'courseid' => $courseid,
+                'timecompleted' => $timecompleted
+            ]);
+
+        } finally {
+            $lock->release();
         }
-        
-        $issuance = new \stdClass();
-        $issuance->userid = $userid;
-        $issuance->courseid = $courseid;
-        $issuance->templateid = $config->templateid;
-        $issuance->status = 'pending';
-        $issuance->attempts = 0;
-        $issuance->categoryid = $config->categoryid ?? null; // Store category for rate limiting
-        $issuance->timecreated = time();
-        $issuance->timemodified = time();
-
-        // Store the grade if available
-        if ($course_grade && isset($course_grade->grade)) {
-            $issuance->grade = $course_grade->grade;
-        } else {
-            // Grade might not be ready yet due to aggregation timing
-            $issuance->grade = null;
-        }
-
-        $issuance->id = $DB->insert_record('local_credentium_issuances', $issuance);
-
-        // Queue the task
-        $task = new \local_credentium\task\issue_credential();
-        $task->set_custom_data([
-            'issuanceid' => $issuance->id,
-            'categoryid' => $issuance->categoryid
-        ]);
-
-        // Only add delay if grade is needed but not available yet
-        if (($config->sendgrade ?? false) && is_null($issuance->grade)) {
-            $task->set_next_run_time(time() + 30); // 30 second delay for grade aggregation
-        }
-
-        \core\task\manager::queue_adhoc_task($task);
     }
 
     /**

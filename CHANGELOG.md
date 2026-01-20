@@ -5,6 +5,29 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-01-21
+
+### Fixed
+- **Grade race condition**: Fixed issue where credentials were issued with stale grades.
+  When a user improved their grade (e.g., from 15% to 80%), credentials could be issued
+  with the old grade due to a race condition between course completion events and grade
+  aggregation. The plugin now waits for grade aggregation to complete before issuing.
+
+### Changed
+- Grade is no longer fetched at course completion event time
+- Added freshness check with 60s tolerance and gradebook needsupdate signal
+- Implemented conditional regrade (only on first attempt or when course needs it)
+- Changed retry mechanism to use `reschedule_or_queue_adhoc_task()` to prevent duplicate tasks
+- Added locking in observer to prevent race condition duplicate issuances
+- Added `timecompleted` column to track completion-event time
+
+### Technical Details
+- Max retry attempts: 5 (~44 minutes total wait)
+- Backoff delays: 15s -> 60s -> 180s -> 600s -> 1800s
+- Freshness tolerance: 60 seconds
+- Gradebook settled (no needsupdate) accepted after first retry
+- Grade stored as raw points; converted to percentage when sending to API
+
 ## [2.0.2] - 2026-01-20
 
 ### Fixed

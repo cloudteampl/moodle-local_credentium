@@ -30,7 +30,16 @@ defined('MOODLE_INTERNAL') || die();
  * Adhoc task to issue a credential.
  */
 class issue_credential extends \core\task\adhoc_task {
-    
+
+    /** @var array Backoff delays for grade retry: 15s → 60s → 180s → 600s → 1800s (cap at 30min). */
+    private const GRADE_RETRY_DELAYS = [15, 60, 180, 600, 1800];
+
+    /** @var int Max retry attempts. Total max wait: ~44 minutes (15 + 60 + 180 + 600 + 1800 = 2655s). */
+    private const MAX_GRADE_ATTEMPTS = 5;
+
+    /** @var int Seconds tolerance for freshness check. */
+    private const FRESHNESS_TOLERANCE = 60;
+
     /**
      * Execute the task.
      */
@@ -117,67 +126,91 @@ class issue_credential extends \core\task\adhoc_task {
             }
         }
 
-        // Check if we need to wait for grade
+        // Check if we need to wait for grade.
         $sendgrade = $courseconfig && !empty($courseconfig->sendgrade);
 
-        // ALWAYS try to refresh grade if NULL and sendgrade is enabled
-        // This handles cases where:
-        // - Grade aggregation was delayed at completion time
-        // - Course config was changed to enable sendgrade after completion
-        // - Grade was manually added/updated after completion
-        if ($sendgrade && is_null($issuance->grade)) {
+        // Grade freshness logic: never trust grade at event time, always verify freshness.
+        if ($sendgrade) {
             require_once($CFG->libdir . '/gradelib.php');
-            require_once($CFG->dirroot . '/grade/querylib.php');
 
-            mtrace("Attempting to fetch grade from gradebook (attempt {$issuance->attempts})...");
-            $course_grade = \grade_get_course_grade($user->id, $issuance->courseid);
+            // Execution number is attempts + 1 (attempts = previous executions).
+            $executionnum = $issuance->attempts + 1;
 
-            if ($course_grade && isset($course_grade->grade)) {
-                // Update the grade in the issuance record
-                $issuance->grade = $course_grade->grade;
-                $DB->update_record('local_credentium_issuances', $issuance);
-                mtrace("✓ Grade fetched and updated: {$course_grade->grade}");
-                // Continue with credential issuance below
-            } else {
-                // Grade still not available
-                mtrace("✗ Grade not yet available in gradebook");
+            // 1. Maybe regrade (conditional - only on first execution or when course needs it).
+            $this->maybe_regrade_course($course->id, $user->id, $executionnum);
 
-                // Use exponential backoff with longer delays: 1m → 5m → 15m → 30m → 1h
-                // Max 10 attempts (configurable)
-                $maxGradeAttempts = 10;
+            // 2. Check freshness with tolerance AND needsupdate signal.
+            $timecompleted = $issuance->timecompleted ?? $issuance->timecreated;
+            $gradecheck = $this->check_grade_freshness($user->id, $course->id, $timecompleted, $executionnum);
 
-                if ($issuance->attempts < $maxGradeAttempts) {
-                    // Exponential backoff: 60s, 300s (5m), 900s (15m), 1800s (30m), 3600s (1h), then cap at 1h
-                    $delays = [60, 300, 900, 1800, 3600];
-                    $delayIndex = min($issuance->attempts, count($delays) - 1);
-                    $delay = $delays[$delayIndex];
+            mtrace("Grade check: fresh=" . ($gradecheck['fresh'] ? 'true' : 'false') .
+                   ", reason={$gradecheck['reason']}" .
+                   ", grade={$gradecheck['grade']}" .
+                   ", grademax={$gradecheck['grademax']}" .
+                   ", gradepass={$gradecheck['gradepass']}" .
+                   ", timemodified={$gradecheck['timemodified']}" .
+                   ", completion={$timecompleted}" .
+                   ", needsupdate=" . ($gradecheck['needsupdate'] ? 'true' : 'false') .
+                   ", execution={$executionnum}" .
+                   ", tolerance=" . self::FRESHNESS_TOLERANCE . "s");
 
-                    // Update attempts
-                    $issuance->attempts++;
-                    $DB->update_record('local_credentium_issuances', $issuance);
+            // Handle NO_GRADE_ITEM case - fail immediately with clear message.
+            if ($gradecheck['reason'] === 'NO_GRADE_ITEM') {
+                mtrace("ERROR: No course grade item found - cannot fetch grade");
+                $this->mark_failed(
+                    $issuance,
+                    'NO_GRADE_ITEM',
+                    "No course grade item exists for this course. Cannot send grade with credential.",
+                    $user,
+                    $course
+                );
+                return;
+            }
 
-                    $task = new issue_credential();
-                    $task->set_custom_data([
-                        'issuanceid' => $issuance->id,
-                        'categoryid' => $issuance->categoryid
-                    ]);
-                    $task->set_next_run_time(time() + $delay);
-                    \core\task\manager::queue_adhoc_task($task);
-
-                    mtrace("Rescheduled grade fetch for issuance {$issuance->id} in {$delay} seconds (attempt {$issuance->attempts}/{$maxGradeAttempts})");
+            if (!$gradecheck['fresh']) {
+                // Grade not fresh - retry with backoff.
+                if ($issuance->attempts < self::MAX_GRADE_ATTEMPTS) {
+                    $delayindex = min($issuance->attempts, count(self::GRADE_RETRY_DELAYS) - 1);
+                    $delay = self::GRADE_RETRY_DELAYS[$delayindex];
+                    $this->schedule_retry($issuance, $gradecheck['reason'], $delay);
                     return;
                 } else {
-                    // Exceeded max grade fetch attempts - fail with clear error
-                    mtrace("ERROR: Grade is required but not available after {$maxGradeAttempts} attempts");
-                    $this->mark_failed(
-                        $issuance,
-                        'GRADE_NOT_AVAILABLE',
-                        "Grade is required by course configuration but is not available in gradebook after {$maxGradeAttempts} retry attempts.",
-                        $user,
-                        $course
-                    );
+                    // Max attempts exceeded.
+                    $totalwait = $this->calculate_total_wait($issuance->attempts);
+                    $this->mark_failed($issuance, 'GRADE_TIMEOUT',
+                        "Grade not ready after {$issuance->attempts} attempts (~{$totalwait}s / " .
+                        round($totalwait / 60) . " min wait). " .
+                        "Reason: {$gradecheck['reason']}, " .
+                        "Grade timemodified: {$gradecheck['timemodified']}, completion: {$timecompleted}, " .
+                        "needsupdate: " . ($gradecheck['needsupdate'] ? 'true' : 'false'),
+                        $user, $course);
                     return;
                 }
+            }
+
+            // 3. Grade is fresh - store raw points value.
+            // NOTE: finalgrade is in POINTS, not percentage.
+            // Conversion to percentage happens later when sending to API.
+            $issuance->grade = $gradecheck['grade'];
+            $issuance->timemodified = time();
+            $DB->update_record('local_credentium_issuances', $issuance);
+
+            // Log percentage for clarity.
+            $percentage = ($gradecheck['grademax'] > 0)
+                ? round(($gradecheck['grade'] / $gradecheck['grademax']) * 100, 2)
+                : $gradecheck['grade'];
+            mtrace("Grade is fresh ({$gradecheck['reason']}): {$gradecheck['grade']} points = {$percentage}%");
+
+            // 4. Log warning if grade is below passing threshold.
+            // NOTE: We do NOT fail here because:
+            // - course_completed can fire for non-grade completion configs (activity completion only)
+            // - gradepass may not be set on the course
+            // - The completion criteria already determined the user "passed" the course
+            // This is informational only; the credential will still be issued.
+            if ($gradecheck['gradepass'] !== null && $gradecheck['gradepass'] > 0 &&
+                $gradecheck['grade'] < $gradecheck['gradepass']) {
+                mtrace("WARNING: Grade {$gradecheck['grade']} is below gradepass {$gradecheck['gradepass']}. " .
+                       "Issuing credential anyway (course completion criteria may not require grade threshold).");
             }
         }
 
@@ -385,10 +418,10 @@ class issue_credential extends \core\task\adhoc_task {
     private function check_rate_limit($categoryid, $limit) {
         global $DB;
 
-        // Count credentials issued in the last hour for this category
+        // Count credentials issued in the last hour for this category.
         $onehourago = time() - 3600;
 
-        // Handle NULL categoryid comparison for cross-database compatibility
+        // Handle NULL categoryid comparison for cross-database compatibility.
         if ($categoryid === null) {
             $sql = "SELECT COUNT(*)
                     FROM {local_credentium_issuances}
@@ -412,5 +445,193 @@ class issue_credential extends \core\task\adhoc_task {
                ($categoryid ?? 'global'));
 
         return $count < $limit;
+    }
+
+    /**
+     * Force grade recalculation - only on first execution or when course needs it.
+     *
+     * @param int $courseid Course ID
+     * @param int $userid User ID
+     * @param int $executionnum Current execution number (1-based)
+     * @return bool True if regrade was performed
+     */
+    private function maybe_regrade_course(int $courseid, int $userid, int $executionnum): bool {
+        global $CFG;
+        require_once($CFG->libdir . '/gradelib.php');
+
+        // Only regrade on first execution, or if course explicitly needs it.
+        if ($executionnum > 1 && !grade_needs_regrade_final_grades($courseid)) {
+            mtrace("Skipping regrade - not needed (execution {$executionnum})");
+            return false;
+        }
+
+        $gradeitem = \grade_item::fetch_course_item($courseid);
+        if ($gradeitem) {
+            grade_regrade_final_grades($courseid, $userid, $gradeitem);
+            mtrace("Forced grade recalculation (execution {$executionnum})");
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if grade is ready for credential issuance.
+     *
+     * Freshness is determined by:
+     * 1. If no grade item exists → fail immediately (NO_GRADE_ITEM)
+     * 2. If no grade exists → not fresh (NO_GRADE)
+     * 3. If timemodified >= (timecompleted - tolerance) → fresh (grade updated around completion)
+     * 4. If gradebook is settled (no needsupdate) AND we've retried at least once → fresh
+     *    (handles cron-delayed completion where grade was finalized before completion event)
+     * 5. Otherwise → not fresh, needs retry
+     *
+     * The "at least one retry" requirement for case 4 prevents accepting stale grades
+     * on the very first execution, giving aggregation a chance to run.
+     *
+     * @param int $userid User ID
+     * @param int $courseid Course ID
+     * @param int $timecompleted Completion-event timestamp from issuance record
+     * @param int $executionnum Current execution number (1-based)
+     * @return array ['fresh' => bool, 'grade' => float|null, 'grademax' => float|null,
+     *                'timemodified' => int|null, 'gradepass' => float|null, 'needsupdate' => bool,
+     *                'reason' => string]
+     */
+    private function check_grade_freshness(int $userid, int $courseid, int $timecompleted, int $executionnum): array {
+        global $DB, $CFG;
+        require_once($CFG->libdir . '/gradelib.php');
+
+        $gradeitem = \grade_item::fetch_course_item($courseid);
+        if (!$gradeitem) {
+            return [
+                'fresh' => false,
+                'grade' => null,
+                'grademax' => null,
+                'timemodified' => null,
+                'gradepass' => null,
+                'needsupdate' => false,
+                'reason' => 'NO_GRADE_ITEM'
+            ];
+        }
+
+        $graderecord = $DB->get_record('grade_grades', [
+            'userid' => $userid,
+            'itemid' => $gradeitem->id
+        ]);
+
+        // Case 1: No grade record or null finalgrade.
+        if (!$graderecord || $graderecord->finalgrade === null) {
+            return [
+                'fresh' => false,
+                'grade' => null,
+                'grademax' => $gradeitem->grademax,
+                'timemodified' => null,
+                'gradepass' => $gradeitem->gradepass,
+                'needsupdate' => (bool)$gradeitem->needsupdate,
+                'reason' => 'NO_GRADE'
+            ];
+        }
+
+        // Check if gradebook needs regrade (needsupdate flag).
+        // Use grade_needs_regrade_final_grades for consistency with regrade logic.
+        $needsupdate = grade_needs_regrade_final_grades($courseid);
+
+        // Apply tolerance: grade is fresh if modified within FRESHNESS_TOLERANCE seconds before completion.
+        $thresholdtime = $timecompleted - self::FRESHNESS_TOLERANCE;
+        $timemodifiedfresh = ($graderecord->timemodified >= $thresholdtime);
+
+        // Case 2: timemodified is within tolerance of completion.
+        if ($timemodifiedfresh) {
+            return [
+                'fresh' => true,
+                'grade' => $graderecord->finalgrade,
+                'grademax' => $gradeitem->grademax,
+                'timemodified' => $graderecord->timemodified,
+                'gradepass' => $gradeitem->gradepass,
+                'needsupdate' => $needsupdate,
+                'reason' => 'TIMEMODIFIED_FRESH'
+            ];
+        }
+
+        // Case 3: Gradebook is settled (no needsupdate) AND we've retried at least once.
+        // This handles cron-delayed completion: grade was finalized at T0, completion fires at T1 >> T0.
+        // Requiring executionnum > 1 prevents accepting stale grades on first run.
+        if (!$needsupdate && $executionnum > 1) {
+            return [
+                'fresh' => true,
+                'grade' => $graderecord->finalgrade,
+                'grademax' => $gradeitem->grademax,
+                'timemodified' => $graderecord->timemodified,
+                'gradepass' => $gradeitem->gradepass,
+                'needsupdate' => $needsupdate,
+                'reason' => 'GRADEBOOK_SETTLED'
+            ];
+        }
+
+        // Case 4: Not fresh - needs retry.
+        $reason = $needsupdate ? 'GRADEBOOK_NEEDS_UPDATE' : 'TIMEMODIFIED_STALE_FIRST_RUN';
+        return [
+            'fresh' => false,
+            'grade' => $graderecord->finalgrade,
+            'grademax' => $gradeitem->grademax,
+            'timemodified' => $graderecord->timemodified,
+            'gradepass' => $gradeitem->gradepass,
+            'needsupdate' => $needsupdate,
+            'reason' => $reason
+        ];
+    }
+
+    /**
+     * Calculate total wait time for given number of attempts.
+     *
+     * @param int $attempts Number of attempts completed
+     * @return int Total seconds waited
+     */
+    private function calculate_total_wait(int $attempts): int {
+        $total = 0;
+        $lastindex = count(self::GRADE_RETRY_DELAYS) - 1;
+        for ($i = 0; $i < $attempts; $i++) {
+            $delayindex = min($i, $lastindex);
+            $total += self::GRADE_RETRY_DELAYS[$delayindex];
+        }
+        return $total;
+    }
+
+    /**
+     * Schedule retry using reschedule_or_queue to avoid duplicates.
+     *
+     * IMPORTANT: Task identity must match observer's queued task exactly:
+     * - Same customdata structure
+     * - Same userid (0 = system)
+     * - Same component
+     * - Same fully-qualified classname
+     *
+     * @param \stdClass $issuance The issuance record
+     * @param string $reason The reason for retry
+     * @param int $delay Delay in seconds
+     */
+    private function schedule_retry(\stdClass $issuance, string $reason, int $delay): void {
+        global $DB;
+
+        // Update attempts counter (attempts = number of executions so far).
+        $issuance->attempts++;
+        $issuance->status = 'retrying';
+        $issuance->timemodified = time();
+        $DB->update_record('local_credentium_issuances', $issuance);
+
+        // Create task with IDENTICAL identity to what observer queued.
+        // Use fully-qualified class name for correct task identity matching.
+        $task = new \local_credentium\task\issue_credential();
+        $task->set_custom_data([
+            'issuanceid' => $issuance->id,
+            'categoryid' => $issuance->categoryid
+        ]);
+        $task->set_userid(0);  // Must match observer.
+        $task->set_component('local_credentium');  // Must match observer.
+        $task->set_next_run_time(time() + $delay);
+
+        // Reschedule existing or queue new (won't duplicate).
+        \core\task\manager::reschedule_or_queue_adhoc_task($task);
+
+        mtrace("Scheduled retry for issuance {$issuance->id} in {$delay}s (reason: {$reason}, attempts: {$issuance->attempts})");
     }
 }
