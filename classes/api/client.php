@@ -52,9 +52,10 @@ class client {
             throw new \moodle_exception('invalidapiurl', 'local_credentium');
         }
 
-        // Ensure API key is a string and strip any potentially harmful characters
+        // Ensure API key is a string - use PARAM_RAW_TRIMMED to preserve dots in the key
+        // API keys use format: cred_xxxxx.yyyyy where the dot separates public ID from secret
         if ($this->apikey) {
-            $this->apikey = clean_param($this->apikey, PARAM_ALPHANUMEXT);
+            $this->apikey = clean_param($this->apikey, PARAM_RAW_TRIMMED);
         }
 
         // Validate categoryid if provided

@@ -5,6 +5,11 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-01-20
+
+### Fixed
+- **API Key Authentication**: Fixed critical bug where dots (`.`) were being stripped from API keys during sanitization. Credentium API keys use the format `cred_xxxxx.yyyyy` where the dot separates the public ID from the secret. Changed `PARAM_ALPHANUMEXT` to `PARAM_RAW_TRIMMED` to preserve all characters in the API key.
+
 ## [2.1.1] - 2025-01-18
 
 ### Added
