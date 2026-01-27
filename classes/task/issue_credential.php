@@ -234,16 +234,10 @@ class issue_credential extends \core\task\adhoc_task {
 
             // Check if we should send grade
             if ($courseconfig && !empty($courseconfig->sendgrade)) {
-                // Format grade for API - convert to percentage string
+                // Send raw grade score to Credentium API (not percentage)
                 if (!is_null($issuance->grade)) {
-                    $gradeitem = \grade_item::fetch_course_item($course->id);
-                    if ($gradeitem && $gradeitem->grademax > 0) {
-                        $percentage = round(($issuance->grade / $gradeitem->grademax) * 100, 2);
-                        $additionaldata['grade'] = $percentage . '%';
-                    } else {
-                        // Fallback to raw grade
-                        $additionaldata['grade'] = (string)$issuance->grade;
-                    }
+                    $additionaldata['grade'] = (string)round($issuance->grade, 2);
+                    mtrace("Sending raw grade to API: {$additionaldata['grade']}");
                 }
                 // If grade is null and sendgrade is enabled, we already handled retry above
             }

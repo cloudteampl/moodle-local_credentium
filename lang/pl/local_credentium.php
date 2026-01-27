@@ -185,7 +185,12 @@ $string['error:notenabled'] = 'Integracja Credentium nie jest włączona.';
 $string['error:categorymodedisabled'] = 'Tryb kategorii nie jest włączony. Włącz go najpierw w globalnych ustawieniach Credentium.';
 $string['error:invalidapiurl'] = 'Podano nieprawidłowy URL API.';
 $string['error:invalidratelimit'] = 'Limit częstotliwości musi być dodatnią liczbą całkowitą.';
+$string['error:template_multiple_assessments'] = 'Wybrany szablon zawiera wiele ocen uczenia się (Learning Assessments) i nie jest obsługiwany. Wybierz szablon z maksymalnie 1 oceną uczenia się.';
 $string['invalidapiurl'] = 'Podano nieprawidłowy URL API.';
+
+// Template warnings.
+$string['template_unsupported_suffix'] = '(nieobsługiwany)';
+$string['template_unsupported_warning'] = 'Ten szablon zawiera {$a} ocen uczenia się (Learning Assessments). Wtyczka obsługuje obecnie tylko szablony z maksymalnie 1 oceną uczenia się. Wybierz inny szablon.';
 
 // Tasks.
 $string['task:issueCredentials'] = 'Wydaj oczekujące certyfikaty';

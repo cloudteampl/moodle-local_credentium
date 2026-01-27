@@ -55,108 +55,23 @@ if (!get_config('local_credentium', 'enabled')) {
 class local_credentium_course_settings_form extends moodleform {
     
     public function definition() {
-        global $DB, $PAGE;
-
+        global $DB;
+        
         $mform = $this->_form;
         $courseid = $this->_customdata['courseid'];
-
-        // Check if category has Credentium enabled (if category mode is enabled).
-        $course = $DB->get_record('course', ['id' => $courseid], 'id, category', MUST_EXIST);
-        $category_enabled = true; // Default to true if no category or category mode disabled
-        $category_disabled_message = '';
-
-        if (get_config('local_credentium', 'categorymode') && !empty($course->category)) {
-            // Walk up category tree to find enabled category config
-            $categoryconfig = local_credentium_get_category_config($course->category);
-
-            // Check if this category or any parent has Credentium enabled
-            if (!$categoryconfig || empty($categoryconfig->enabled)) {
-                // Try to find enabled config in parent categories
-                $parent_categoryid = $course->category;
-                $found_enabled = false;
-                $levels_checked = 0;
-                $max_levels = 10;
-
-                while ($parent_categoryid && $levels_checked < $max_levels) {
-                    $parent_config = local_credentium_get_category_config($parent_categoryid);
-                    if ($parent_config && !empty($parent_config->enabled)) {
-                        $found_enabled = true;
-                        break;
-                    }
-
-                    $parent_cat = $DB->get_record('course_categories', ['id' => $parent_categoryid], 'parent');
-                    $parent_categoryid = $parent_cat ? $parent_cat->parent : null;
-                    $levels_checked++;
-                }
-
-                if (!$found_enabled) {
-                    $category_enabled = false;
-                    $coursecategory = $DB->get_record('course_categories', ['id' => $course->category], 'name');
-                    $category_disabled_message = get_string('category_credentium_disabled', 'local_credentium',
-                        $coursecategory->name ?? get_string('unknowncategory', 'local_credentium'));
-                }
-            }
-        }
-
-        // If category has Credentium disabled, show error and return.
-        if (!$category_enabled) {
-            $mform->addElement('static', 'category_disabled_error', '',
-                '<div class="alert alert-danger">' .
-                '<strong>' . get_string('category_credentium_disabled_heading', 'local_credentium') . '</strong><br>' .
-                $category_disabled_message .
-                '</div>');
-
-            // Add disabled checkbox just for display.
-            $mform->addElement('checkbox', 'enabled', get_string('courseenabled', 'local_credentium'));
-            $mform->hardFreeze('enabled');
-
-            // Hidden elements.
-            $mform->addElement('hidden', 'courseid', $courseid);
-            $mform->setType('courseid', PARAM_INT);
-
-            return; // Stop here - don't show any other fields.
-        }
-
-        // Check if API credentials are configured (category or global).
-        $categoryconfig = local_credentium_resolve_category_config($courseid);
-        $has_credentials = !empty($categoryconfig->apiurl) && !empty($categoryconfig->apikey);
-
-        // If no credentials, show error message and disable everything.
-        if (!$has_credentials) {
-            $mform->addElement('static', 'no_credentials_error', '',
-                '<div class="alert alert-danger">' .
-                '<strong>' . get_string('nocredentials_heading', 'local_credentium') . '</strong><br>' .
-                get_string('nocredentials_message', 'local_credentium') .
-                '</div>');
-
-            // Add disabled checkbox just for display.
-            $mform->addElement('checkbox', 'enabled', get_string('courseenabled', 'local_credentium'));
-            $mform->hardFreeze('enabled');
-
-            // Hidden elements.
-            $mform->addElement('hidden', 'courseid', $courseid);
-            $mform->setType('courseid', PARAM_INT);
-
-            return; // Stop here - don't show any other fields.
-        }
-
-        // Enable/disable for course with auto-save.
-        $mform->addElement('checkbox', 'enabled', get_string('courseenabled', 'local_credentium'),
-            '', ['id' => 'id_enabled']);
+        
+        // Enable/disable for course.
+        $mform->addElement('checkbox', 'enabled', get_string('courseenabled', 'local_credentium'));
         $mform->addHelpButton('enabled', 'courseenabled', 'local_credentium');
 
-        // Add JavaScript for auto-save when checkbox changes.
-        $PAGE->requires->js_amd_inline("
-            require(['jquery'], function($) {
-                $('#id_enabled').change(function() {
-                    // Auto-submit the form when enabled checkbox changes
-                    $(this).closest('form').submit();
-                });
-            });
-        ");
-
-        // Show which category configuration will be used (always show, not dependent on enable checkbox).
+        // Category inheritance (only show if category mode is enabled).
         if (get_config('local_credentium', 'categorymode')) {
+            $mform->addElement('checkbox', 'inherit_category', get_string('inherit_category', 'local_credentium'));
+            $mform->addHelpButton('inherit_category', 'inherit_category', 'local_credentium');
+            $mform->setDefault('inherit_category', 1);
+            $mform->disabledIf('inherit_category', 'enabled', 'notchecked');
+
+            // Show which category configuration will be used.
             $categoryinfo = $this->get_category_info($courseid);
             if ($categoryinfo) {
                 $mform->addElement('static', 'categoryinfo', get_string('categoryinfo', 'local_credentium'),
@@ -167,87 +82,64 @@ class local_credentium_course_settings_form extends moodleform {
         // Get templates from API or cache.
         $templates = $this->get_templates();
         $templateoptions = ['' => get_string('selecttemplate', 'local_credentium')];
-        $templatesdata = []; // Store template data for JavaScript
+        $unsupportedtemplates = [];
         foreach ($templates as $template) {
-            $templateoptions[$template->id] = $template->title;
-            $templatesdata[$template->id] = [
-                'requiresGrade' => $template->requiresGrade ?? false
-            ];
+            $assessmentcount = $template->learningAssessmentCount ?? 0;
+            if ($assessmentcount > 1) {
+                // Mark as unsupported but still show (so admin knows it exists).
+                $templateoptions[$template->id] = $template->title . ' ' .
+                    get_string('template_unsupported_suffix', 'local_credentium');
+                $unsupportedtemplates[$template->id] = $assessmentcount;
+            } else {
+                $templateoptions[$template->id] = $template->title;
+            }
         }
+        // Store for use in validation.
+        $this->unsupportedtemplates = $unsupportedtemplates;
 
-        local_credentium_log('Templates loaded for course form', ['count' => count($templates)]);
+        local_credentium_log('Templates loaded for course form', [
+            'count' => count($templates),
+            'unsupported' => count($unsupportedtemplates),
+        ]);
 
         // Template selection.
         $mform->addElement('select', 'templateid', get_string('credentialtemplate', 'local_credentium'), $templateoptions);
         $mform->addHelpButton('templateid', 'credentialtemplate', 'local_credentium');
-        $mform->hideIf('templateid', 'enabled', 'notchecked');
+        $mform->disabledIf('templateid', 'enabled', 'notchecked');
+
+        // Show warning if currently selected template is unsupported.
+        $currentconfig = local_credentium_get_course_config($courseid);
+        if ($currentconfig && !empty($currentconfig->templateid) && isset($unsupportedtemplates[$currentconfig->templateid])) {
+            $assessmentcount = $unsupportedtemplates[$currentconfig->templateid];
+            $mform->addElement('static', 'template_warning', '',
+                '<div class="alert alert-warning">' .
+                get_string('template_unsupported_warning', 'local_credentium', $assessmentcount) .
+                '</div>');
+        }
 
         // Refresh templates button.
         $refreshurl = new moodle_url('/local/credentium/course_settings.php',
             ['id' => $courseid, 'action' => 'refreshtemplates', 'sesskey' => sesskey()]);
         $mform->addElement('button', 'refreshtemplates', get_string('refreshtemplates', 'local_credentium'),
             ['onclick' => "window.location.href='{$refreshurl->out(false)}'"]);
-        $mform->hideIf('refreshtemplates', 'enabled', 'notchecked');
-
-        // Grade requirement information (shown dynamically based on selected template)
-        $mform->addElement('static', 'graderequired_yes', '',
-            '<div class="alert alert-warning">' .
-            '<strong>' . get_string('templaterequiresgrade', 'local_credentium') . '</strong><br>' .
-            get_string('templaterequiresgrade_info', 'local_credentium') .
-            '</div>');
-        $mform->hideIf('graderequired_yes', 'enabled', 'notchecked');
-
-        $mform->addElement('static', 'graderequired_no', '',
-            '<div class="alert alert-info">' .
-            '<strong>' . get_string('templatenograderequired', 'local_credentium') . '</strong><br>' .
-            get_string('templatenograderequired_info', 'local_credentium') .
-            '</div>');
-        $mform->hideIf('graderequired_no', 'enabled', 'notchecked');
-
-        // Add JavaScript to show/hide grade requirements based on selected template
-        $PAGE->requires->js_amd_inline("
-            require(['jquery'], function($) {
-                var templatesData = " . json_encode($templatesdata) . ";
-
-                function updateGradeRequirement() {
-                    var selectedTemplate = $('#id_templateid').val();
-                    var gradeRequired = templatesData[selectedTemplate] ? templatesData[selectedTemplate].requiresGrade : false;
-
-                    if (selectedTemplate === '') {
-                        // No template selected - hide both
-                        $('#fitem_id_graderequired_yes').hide();
-                        $('#fitem_id_graderequired_no').hide();
-                    } else if (gradeRequired) {
-                        // Template requires grade
-                        $('#fitem_id_graderequired_yes').show();
-                        $('#fitem_id_graderequired_no').hide();
-                    } else {
-                        // Template does not require grade
-                        $('#fitem_id_graderequired_yes').hide();
-                        $('#fitem_id_graderequired_no').show();
-                    }
-                }
-
-                // Update on template change
-                $('#id_templateid').change(updateGradeRequirement);
-
-                // Initial update
-                updateGradeRequirement();
-            });
-        ");
-
+        
+        // Send grade checkbox.
+        $mform->addElement('checkbox', 'sendgrade', get_string('sendgrade', 'local_credentium'));
+        $mform->addHelpButton('sendgrade', 'sendgrade', 'local_credentium');
+        $mform->setDefault('sendgrade', 1); // Default to sending grade
+        $mform->disabledIf('sendgrade', 'enabled', 'notchecked');
+        
         // Important information about automatic issuance.
         $mform->addElement('static', 'issuanceinfo', get_string('issuanceinfo', 'local_credentium'),
-            '<div class="alert alert-info">' .
-            get_string('issuanceinfo_desc', 'local_credentium') .
+            '<div class="alert alert-info">' . 
+            get_string('issuanceinfo_desc', 'local_credentium') . 
             '</div>');
         $mform->addHelpButton('issuanceinfo', 'issuanceinfo', 'local_credentium');
-        $mform->hideIf('issuanceinfo', 'enabled', 'notchecked');
-
+        
         // Hidden elements.
         $mform->addElement('hidden', 'courseid', $courseid);
         $mform->setType('courseid', PARAM_INT);
-
+        
         // Buttons.
         $this->add_action_buttons();
     }
@@ -289,19 +181,10 @@ class local_credentium_course_settings_form extends moodleform {
             $courseid = $this->_customdata['courseid'];
             $categoryconfig = local_credentium_resolve_category_config($courseid);
 
-            // Check if API credentials are actually configured.
-            if (empty($categoryconfig->apiurl) || empty($categoryconfig->apikey)) {
-                local_credentium_log('No API credentials configured', [
-                    'courseid' => $courseid,
-                    'categoryid' => $categoryconfig->categoryid ?? null
-                ]);
-                return [];
-            }
-
             // Create client with category-specific credentials and categoryid for cache isolation.
             $client = new \local_credentium\api\client(
-                $categoryconfig->apiurl,
-                $categoryconfig->apikey,
+                $categoryconfig->apiurl ?? null,
+                $categoryconfig->apikey ?? null,
                 $categoryconfig->categoryid ?? null
             );
 
@@ -324,6 +207,18 @@ class local_credentium_course_settings_form extends moodleform {
         if (!empty($data['enabled'])) {
             if (empty($data['templateid'])) {
                 $errors['templateid'] = get_string('required');
+            } else {
+                // Check if selected template has multiple Learning Assessments (unsupported).
+                $templates = $this->get_templates();
+                foreach ($templates as $template) {
+                    if ($template->id === $data['templateid']) {
+                        $assessmentcount = $template->learningAssessmentCount ?? 0;
+                        if ($assessmentcount > 1) {
+                            $errors['templateid'] = get_string('error:template_multiple_assessments', 'local_credentium');
+                        }
+                        break;
+                    }
+                }
             }
         }
 
@@ -383,46 +278,15 @@ if ($mform->is_cancelled()) {
 } else if ($data = $mform->get_data()) {
     local_credentium_log('Form data received for course', ['courseid' => $courseid]);
 
-    // Determine sendgrade automatically based on selected template's requiresGrade field
-    $sendgrade = 0; // Default
-    if (!empty($data->templateid)) {
-        // Get template from cache to check requiresGrade
-        $categoryconfig = local_credentium_resolve_category_config($courseid);
-        try {
-            $client = new \local_credentium\api\client(
-                $categoryconfig->apiurl,
-                $categoryconfig->apikey,
-                $categoryconfig->categoryid ?? null
-            );
-            $templates = $client->get_templates(false);
-
-            foreach ($templates as $template) {
-                if ($template->id === $data->templateid) {
-                    $sendgrade = !empty($template->requiresGrade) ? 1 : 0;
-                    local_credentium_log('Template requiresGrade determined', [
-                        'templateid' => $template->id,
-                        'requiresGrade' => $template->requiresGrade ?? false,
-                        'sendgrade' => $sendgrade
-                    ]);
-                    break;
-                }
-            }
-        } catch (Exception $e) {
-            local_credentium_log('Failed to determine template grade requirement', [
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
     // Prepare config object.
     $config = new stdClass();
     $config->courseid = $data->courseid ?? $courseid; // Use form data courseid, fallback to URL param
     $config->enabled = !empty($data->enabled) ? 1 : 0;
     $config->templateid = !empty($data->templateid) ? $data->templateid : null;
-    $config->sendgrade = $sendgrade;
-    $config->mingrade = null;
-    $config->issuancetrigger = 'completion';
-    $config->inherit_category = 1;
+    $config->sendgrade = !empty($data->sendgrade) ? 1 : 0;
+    $config->mingrade = null; // Not used anymore, but kept for DB compatibility
+    $config->issuancetrigger = 'completion'; // Always use completion trigger
+    $config->inherit_category = isset($data->inherit_category) ? (int)$data->inherit_category : 1; // Default to 1
 
     // Save config.
     $success = local_credentium_save_course_config($config);
@@ -433,8 +297,8 @@ if ($mform->is_cancelled()) {
         'enabled' => $config->enabled
     ]);
 
-    // Redirect back to same page (stay on settings page).
-    redirect(new moodle_url('/local/credentium/course_settings.php', ['id' => $courseid]),
+    // Redirect with success message.
+    redirect(new moodle_url('/course/view.php', ['id' => $courseid]),
         get_string('changessaved'), null,
         \core\output\notification::NOTIFY_SUCCESS);
 }
