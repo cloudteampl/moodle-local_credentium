@@ -5,15 +5,31 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.4] - 2026-01-27
-
-### Added
-- **Version display in settings**: Plugin version is now displayed at the top of the global settings page for easier troubleshooting and support.
-- **Template validation**: Templates with multiple Learning Assessments (`learningAssessmentCount > 1`) are now marked as unsupported and cannot be selected.
-- **Polish translations**: Added complete Polish language support.
+## [2.0.5] - 2026-01-28
 
 ### Fixed
-- **Grade format**: Send raw grade score to Credentium API instead of converting to percentage.
+- **Critical language strings bug**: Fixed missing English language strings that caused `[[globalsettings]]`,
+  `[[dataretention]]` and `TODO: missing help string [apiurl_global_help]` errors on the settings page.
+  The English language file was out of sync with the Polish translation and the admin_settings.php UI.
+- **Missing admin_settings.php**: Restored the admin settings page file that was accidentally excluded from the repository.
+- **settings.php mismatch**: Fixed settings.php to properly redirect to admin_settings.php for consistent UI.
+
+### Technical Details
+- Added 30+ missing English language strings to match Polish translations
+- Strings added: `globalsettings`, `apiurl_global_help`, `apikey_global_help`, `dataretention`,
+  `dataretention_help`, `categorymode_info_heading`, `categorymode_info_text`, `testconnection_disabled`,
+  and many more testconnection_*, privacy:metadata:credentium_api:*, category settings strings
+
+## [2.0.4] - 2026-01-27
+
+### Fixed
+- **Raw grade handling**: Credentials now send raw grade points to API instead of percentage.
+  The API expects raw values and handles conversion internally.
+- **Multi-assessment template restriction**: Templates with multiple Learning Assessments are now
+  marked as unsupported and cannot be selected for courses. Only templates with 0 or 1 Learning Assessment are allowed.
+
+### Added
+- Plugin version display in global settings header for easier troubleshooting.
 
 ## [2.0.3] - 2026-01-21
 

@@ -44,16 +44,6 @@ class local_credentium_admin_settings_form extends moodleform {
     public function definition() {
         $mform = $this->_form;
 
-        // Plugin version display for troubleshooting.
-        $pluginman = core_plugin_manager::instance();
-        $plugininfo = $pluginman->get_plugin_info('local_credentium');
-        $versioninfo = (object)[
-            'release' => $plugininfo->release ?? 'unknown',
-            'version' => $plugininfo->versiondb ?? $plugininfo->versiondisk ?? 'unknown',
-        ];
-        $mform->addElement('static', 'version_info', get_string('pluginversion', 'local_credentium'),
-            get_string('pluginversion_info', 'local_credentium', $versioninfo));
-
         // Introduction text.
         $mform->addElement('static', 'intro', '',
             '<div class="alert alert-info">' .
