@@ -5,6 +5,26 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.6] - 2026-02-09
+
+### Fixed
+- **Critical MariaDB/MySQL SQL compatibility**: Fixed `IS NOT DISTINCT FROM NULL` syntax error
+  that occurred when connecting to Credentium from the plugin configuration page. MariaDB and MySQL
+  do not support the `IS NOT DISTINCT FROM` SQL syntax which Moodle DML generates automatically
+  when `null` values are passed in condition arrays to methods like `delete_records()` and
+  `get_records()`. Replaced all DML calls that could receive null `categoryid` with explicit
+  SQL using `IS NULL` / `= :param` conditional logic.
+
+### Technical Details
+- Fixed `cache_templates()` in `classes/api/client.php`: `delete_records()` with null categoryid
+  now uses `delete_records_select()` with explicit `IS NULL` clause
+- Fixed `get_cached_templates()` in `classes/api/client.php`: `get_records()` with null categoryid
+  now uses `get_records_select()` with explicit `IS NULL` clause
+- The `get_cached_templates()` cache-time check was already fixed in a previous version using
+  `get_field_sql()` with explicit SQL, but the subsequent `get_records()` and `delete_records()`
+  calls in the same class were still using condition arrays vulnerable to the same issue
+- All fixes are compatible with MariaDB, MySQL, and PostgreSQL
+
 ## [2.0.5] - 2026-01-28
 
 ### Fixed

@@ -215,9 +215,14 @@ class client {
     private function cache_templates($templates) {
         global $DB;
 
-        // Clear existing cache for this category only
-        $conditions = ['categoryid' => $this->categoryid];
-        $DB->delete_records('local_credentium_templates_cache', $conditions);
+        // Clear existing cache for this category only.
+        // Handle NULL categoryid explicitly for MariaDB/MySQL compatibility
+        // (these databases do not support IS NOT DISTINCT FROM syntax).
+        if ($this->categoryid === null) {
+            $DB->delete_records_select('local_credentium_templates_cache', 'categoryid IS NULL');
+        } else {
+            $DB->delete_records('local_credentium_templates_cache', ['categoryid' => $this->categoryid]);
+        }
 
         // Cache new templates
         foreach ($templates as $template) {
@@ -258,13 +263,22 @@ class client {
         }
 
         if ($cachetime && (time() - $cachetime < 3600)) {
-            // Build conditions for category and active filter
-            $conditions = ['categoryid' => $this->categoryid];
+            // Build SQL for category and active filter.
+            // Handle NULL categoryid explicitly for MariaDB/MySQL compatibility
+            // (these databases do not support IS NOT DISTINCT FROM syntax).
+            if ($this->categoryid === null) {
+                $wheresql = 'categoryid IS NULL';
+                $params = [];
+            } else {
+                $wheresql = 'categoryid = :categoryid';
+                $params = ['categoryid' => $this->categoryid];
+            }
             if ($activeonly) {
-                $conditions['active'] = 1;
+                $wheresql .= ' AND active = :active';
+                $params['active'] = 1;
             }
 
-            $records = $DB->get_records('local_credentium_templates_cache', $conditions, 'name ASC');
+            $records = $DB->get_records_select('local_credentium_templates_cache', $wheresql, $params, 'name ASC');
 
             $templates = [];
             foreach ($records as $record) {
