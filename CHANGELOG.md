@@ -5,6 +5,43 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.7] - 2026-07-24
+
+### Fixed
+- **Missing message provider label**: the notification preferences page rendered a raw
+  `[[messageprovider:credentialissuance]]` placeholder instead of a label. Added
+  `messageprovider:credentialissuance` to both the English and Polish language packs.
+- **Uninformative notification subject**: every credential notification was titled
+  "Credentium® Integration" (the plugin name), forcing students to open it to learn what
+  happened. The subject now describes the event — "You've earned a digital credential" /
+  "Masz nowe cyfrowe poświadczenie" — with a separate subject for the failure case.
+- **Misleading success message**: the notification claimed the credential "has been issued
+  successfully", when in fact the plugin had only *requested* issuance from Credentium.
+  Students went looking for a credential that did not exist yet. The message now states that
+  issuance has been requested, that it normally completes within 15 minutes, and that a
+  separate notification follows when the credential is ready to claim.
+- **Misleading failure message**: the failure notification promised "We will retry
+  automatically", but it is only sent from `mark_failed()` — after all three retries are
+  already exhausted. It now directs the student to their teacher or the site administrator.
+- **Incomplete Polish language pack**: `pluginversion`, `pluginversion_info`,
+  `categoryenabled` and `categoryenabled_help` had no Polish translation and silently fell
+  back to English.
+
+### Changed
+- **Polish terminology unified**: "certyfikat" replaced with the product term "poświadczenie"
+  across the Polish language pack (61 occurrences, with grammatical gender corrected from
+  masculine to neuter). "Mikropoświadczenie" is retained where the English source says
+  "microcredential".
+- Notification bodies are now multi-paragraph; `send_notification()` renders the HTML variant
+  with `nl2br()` and formats the course name with `format_string()` (escaped for the HTML
+  part, unescaped for the plain-text part).
+- Notifications now set `smallmessage`, which Moodle uses for the mobile app and digests.
+
+### Added
+- `tests/lang_test.php`: regression tests guarding language-pack completeness — English/Polish
+  key parity, detection of untranslated (copy-pasted) values, `{$a}` placeholder parity, and
+  the presence of labels for every message provider, capability and scheduled task.
+
 ## [2.0.6] - 2026-02-09
 
 ### Fixed

@@ -23,32 +23,34 @@
  */
 
 $string['pluginname'] = 'Integracja Credentium®';
-$string['privacy:metadata'] = 'Wtyczka Integracja Credentium® przechowuje lokalnie informacje o wydanych certyfikatach i przesyła dane użytkowników do zewnętrznej usługi Credentium® (płatne API strony trzeciej).';
+$string['privacy:metadata'] = 'Wtyczka Integracja Credentium® przechowuje lokalnie informacje o wydanych poświadczeniach i przesyła dane użytkowników do zewnętrznej usługi Credentium® (płatne API strony trzeciej).';
 
 // Local database storage.
-$string['privacy:metadata:local_credentium_issuances'] = 'Informacje o certyfikatach wydanych użytkownikom.';
-$string['privacy:metadata:local_credentium_issuances:userid'] = 'ID użytkownika, który otrzymał certyfikat.';
-$string['privacy:metadata:local_credentium_issuances:courseid'] = 'ID kursu, dla którego wydano certyfikat.';
-$string['privacy:metadata:local_credentium_issuances:credentialid'] = 'Zewnętrzny ID certyfikatu w systemie Credentium.';
-$string['privacy:metadata:local_credentium_issuances:status'] = 'Status wydania certyfikatu.';
-$string['privacy:metadata:local_credentium_issuances:timecreated'] = 'Czas wydania certyfikatu.';
+$string['privacy:metadata:local_credentium_issuances'] = 'Informacje o poświadczeniach wydanych użytkownikom.';
+$string['privacy:metadata:local_credentium_issuances:userid'] = 'ID użytkownika, który otrzymał poświadczenie.';
+$string['privacy:metadata:local_credentium_issuances:courseid'] = 'ID kursu, dla którego wydano poświadczenie.';
+$string['privacy:metadata:local_credentium_issuances:credentialid'] = 'Zewnętrzny ID poświadczenia w systemie Credentium.';
+$string['privacy:metadata:local_credentium_issuances:status'] = 'Status wydania poświadczenia.';
+$string['privacy:metadata:local_credentium_issuances:timecreated'] = 'Czas wydania poświadczenia.';
 
 // External service - Credentium API (PAID commercial service).
-$string['privacy:metadata:credentium_api'] = 'API Credentium® to płatna usługa strony trzeciej (https://credentium.com) służąca do wydawania cyfrowych certyfikatów. Dane użytkowników są przesyłane do tej zewnętrznej usługi.';
-$string['privacy:metadata:credentium_api:email'] = 'Adres e-mail użytkownika jest wysyłany do Credentium® w celu identyfikacji odbiorcy certyfikatu.';
-$string['privacy:metadata:credentium_api:firstname'] = 'Imię użytkownika jest wysyłane do Credentium® w celu personalizacji certyfikatu.';
-$string['privacy:metadata:credentium_api:lastname'] = 'Nazwisko użytkownika jest wysyłane do Credentium® w celu personalizacji certyfikatu.';
-$string['privacy:metadata:credentium_api:coursename'] = 'Nazwa kursu jest wysyłana do Credentium® w celu identyfikacji kursu, którego dotyczy certyfikat.';
-$string['privacy:metadata:credentium_api:grade'] = 'Ocena użytkownika z kursu (jeśli włączona) jest wysyłana do Credentium® w celu umieszczenia na certyfikacie.';
-$string['privacy:metadata:credentium_api:templateid'] = 'ID szablonu certyfikatu jest wysyłane do Credentium® w celu określenia, który projekt certyfikatu ma zostać użyty.';
+$string['privacy:metadata:credentium_api'] = 'API Credentium® to płatna usługa strony trzeciej (https://credentium.com) służąca do wydawania cyfrowych poświadczeń. Dane użytkowników są przesyłane do tej zewnętrznej usługi.';
+$string['privacy:metadata:credentium_api:email'] = 'Adres e-mail użytkownika jest wysyłany do Credentium® w celu identyfikacji odbiorcy poświadczenia.';
+$string['privacy:metadata:credentium_api:firstname'] = 'Imię użytkownika jest wysyłane do Credentium® w celu personalizacji poświadczenia.';
+$string['privacy:metadata:credentium_api:lastname'] = 'Nazwisko użytkownika jest wysyłane do Credentium® w celu personalizacji poświadczenia.';
+$string['privacy:metadata:credentium_api:coursename'] = 'Nazwa kursu jest wysyłana do Credentium® w celu identyfikacji kursu, którego dotyczy poświadczenie.';
+$string['privacy:metadata:credentium_api:grade'] = 'Ocena użytkownika z kursu (jeśli włączona) jest wysyłana do Credentium® w celu umieszczenia na poświadczeniu.';
+$string['privacy:metadata:credentium_api:templateid'] = 'ID szablonu poświadczenia jest wysyłane do Credentium® w celu określenia, który projekt poświadczenia ma zostać użyty.';
 
 // Settings.
 $string['settings'] = 'Ustawienia Credentium';
 $string['globalsettings'] = 'Ustawienia globalne Credentium';
 $string['settings_desc'] = 'Skonfiguruj połączenie z API Credentium do wydawania mikropoświadczeń.';
+$string['pluginversion'] = 'Wersja wtyczki';
+$string['pluginversion_info'] = 'Wersja <strong>{$a->release}</strong> (kompilacja {$a->version})';
 $string['enabled'] = 'Włącz integrację Credentium';
 $string['enabled_desc'] = 'Włącz lub wyłącz integrację Credentium globalnie.';
-$string['enabled_help'] = 'Po włączeniu wtyczka będzie automatycznie wydawać cyfrowe certyfikaty studentom po ukończeniu kursu (jeśli kurs jest również skonfigurowany indywidualnie).';
+$string['enabled_help'] = 'Po włączeniu wtyczka będzie automatycznie wydawać cyfrowe poświadczenia studentom po ukończeniu kursu (jeśli kurs jest również skonfigurowany indywidualnie).';
 $string['apiurl'] = 'URL API';
 $string['apiurl_desc'] = 'Adres URL punktu końcowego API Credentium.';
 $string['apiurl_global'] = 'URL API';
@@ -69,7 +71,7 @@ $string['testconnection_apiurl_label'] = 'URL API:';
 $string['testconnection_apikey_label'] = 'Klucz API:';
 $string['testconnection_notconfigured'] = 'Nie skonfigurowano';
 $string['testconnection_attempting'] = 'Próba pobrania szablonów z API...';
-$string['testconnection_found_templates'] = 'Znaleziono {$a} szablon(ów) certyfikatu.';
+$string['testconnection_found_templates'] = 'Znaleziono {$a} szablon(ów) poświadczeń.';
 $string['testconnection_templates_heading'] = 'Znalezione szablony:';
 $string['testconnection_no_templates'] = 'Połączenie z API powiodło się, ale serwer zwrócił 0 szablonów. Sprawdź, czy Twój klucz API ma dostęp do szablonów.';
 $string['testconnection_debug_heading'] = 'Szczegółowe informacje debugowania';
@@ -94,18 +96,18 @@ $string['debuglog_help'] = 'Po włączeniu szczegółowe informacje diagnostyczn
 
 // Data retention (GDPR).
 $string['dataretention'] = 'Okres przechowywania danych';
-$string['dataretention_help'] = 'Jak długo przechowywać rekordy wydanych certyfikatów w bazie danych przed automatycznym usunięciem. Rekordy starsze niż ten okres będą trwale usunięte przez zaplanowane zadanie, które działa codziennie o 2:00 w nocy (czas serwera). Zapewnia to zgodność z RODO poprzez wdrażanie zasad minimalizacji danych. Domyślnie: 365 dni (1 rok). Dostępne jednostki: dni, tygodnie. Uwaga: Ponieważ czyszczenie działa codziennie, rzeczywiste przechowywanie może być do 24 godzin dłuższe niż skonfigurowane. Usuwanie dotyczy wszystkich rekordów wydanych certyfikatów niezależnie od statusu (wydane, nieudane lub oczekujące).';
+$string['dataretention_help'] = 'Jak długo przechowywać rekordy wydanych poświadczeń w bazie danych przed automatycznym usunięciem. Rekordy starsze niż ten okres będą trwale usunięte przez zaplanowane zadanie, które działa codziennie o 2:00 w nocy (czas serwera). Zapewnia to zgodność z RODO poprzez wdrażanie zasad minimalizacji danych. Domyślnie: 365 dni (1 rok). Dostępne jednostki: dni, tygodnie. Uwaga: Ponieważ czyszczenie działa codziennie, rzeczywiste przechowywanie może być do 24 godzin dłuższe niż skonfigurowane. Usuwanie dotyczy wszystkich rekordów wydanych poświadczeń niezależnie od statusu (wydane, nieudane lub oczekujące).';
 
 // Course settings.
 $string['coursesettings'] = 'Ustawienia Credentium';
 $string['courseenabled'] = 'Włącz Credentium dla tego kursu';
-$string['courseenabled_help'] = 'Po włączeniu studenci otrzymają certyfikaty Credentium po ukończeniu kursu.';
-$string['credentialtemplate'] = 'Szablon certyfikatu';
-$string['credentialtemplate_help'] = 'Wybierz szablon certyfikatu do użycia w tym kursie.';
+$string['courseenabled_help'] = 'Po włączeniu studenci otrzymają poświadczenia Credentium po ukończeniu kursu.';
+$string['credentialtemplate'] = 'Szablon poświadczenia';
+$string['credentialtemplate_help'] = 'Wybierz szablon poświadczenia do użycia w tym kursie.';
 $string['templaterequiresgrade'] = 'Ten szablon wymaga oceny';
-$string['templaterequiresgrade_info'] = 'Ten szablon certyfikatu zawiera twierdzenie(-a) oceny uczenia się, dlatego ocena studenta z kursu zostanie umieszczona na mikropoświadczeniu. Wydanie certyfikatu nie powiedzie się, jeśli ocena nie będzie dostępna.';
+$string['templaterequiresgrade_info'] = 'Ten szablon poświadczenia zawiera twierdzenie(-a) oceny uczenia się, dlatego ocena studenta z kursu zostanie umieszczona na mikropoświadczeniu. Wydanie poświadczenia nie powiedzie się, jeśli ocena nie będzie dostępna.';
 $string['templatenograderequired'] = 'Ten szablon nie zawiera twierdzeń oceny';
-$string['templatenograderequired_info'] = 'Ten szablon certyfikatu nie zawiera twierdzeń oceny uczenia się, więc ocena z kursu (nawet jeśli dostępna) nie zostanie przedstawiona na mikropoświadczeniu.';
+$string['templatenograderequired_info'] = 'Ten szablon poświadczenia nie zawiera twierdzeń oceny uczenia się, więc ocena z kursu (nawet jeśli dostępna) nie zostanie przedstawiona na mikropoświadczeniu.';
 $string['inherit_category'] = 'Użyj poświadczeń API kategorii';
 $string['inherit_category_help'] = 'Po włączeniu ten kurs będzie używał poświadczeń API skonfigurowanych na poziomie kategorii (lub poświadczeń globalnych, jeśli nie znaleziono konfiguracji kategorii). Po wyłączeniu musisz skonfigurować poświadczenia API specyficzne dla kursu.';
 $string['categoryinfo'] = 'Źródło poświadczeń API';
@@ -130,37 +132,39 @@ $string['globalcredentials_available'] = 'Globalne poświadczenia API są skonfi
 $string['globalcredentials_available_desc'] = 'Ta kategoria będzie używać globalnych poświadczeń API Credentium skonfigurowanych w Administracja witryny > Wtyczki > Wtyczki lokalne > Integracja Credentium®.';
 $string['globalcredentials_notavailable'] = 'Globalne poświadczenia API nie są skonfigurowane';
 $string['globalcredentials_notavailable_desc'] = 'Globalne poświadczenia API nie zostały skonfigurowane. Musisz albo skonfigurować je w Administracja witryny > Wtyczki > Wtyczki lokalne > Integracja Credentium®, albo wybrać "Użyj niestandardowych poświadczeń API" powyżej i skonfigurować poświadczenia specyficzne dla kategorii.';
+$string['categoryenabled'] = 'Włącz Credentium dla tej kategorii';
+$string['categoryenabled_help'] = 'Po włączeniu kursy w tej kategorii mogą korzystać z tych poświadczeń API. Każdy kurs nadal musi zostać włączony indywidualnie w swoich ustawieniach.';
 $string['apicredentials'] = 'Poświadczenia API';
 $string['apiurl_help'] = 'Adres URL punktu końcowego API Credentium dla tej kategorii (np. https://api.credentium.com lub https://tenant1.credentium.com).';
 $string['apikey_help'] = 'Twój klucz API Credentium do uwierzytelniania. Ten klucz zostanie zaszyfrowany podczas zapisywania.';
 $string['operations'] = 'Kontrole operacyjne';
 $string['paused'] = 'Wstrzymaj wszystkie wydania';
-$string['paused_help'] = 'Po wstrzymaniu nowe certyfikaty nie będą wydawane dla kursów używających konfiguracji tej kategorii. Istniejące oczekujące certyfikaty pozostaną oczekujące do czasu wznowienia.';
-$string['ratelimit'] = 'Limit częstotliwości (certyfikatów na godzinę)';
-$string['ratelimit_help'] = 'Maksymalna liczba certyfikatów, które mogą być wydane na godzinę dla wszystkich kursów używających konfiguracji tej kategorii. Pozostaw puste dla braku limitu.';
+$string['paused_help'] = 'Po wstrzymaniu nowe poświadczenia nie będą wydawane dla kursów używających konfiguracji tej kategorii. Istniejące oczekujące poświadczenia pozostaną oczekujące do czasu wznowienia.';
+$string['ratelimit'] = 'Limit częstotliwości (poświadczeń na godzinę)';
+$string['ratelimit_help'] = 'Maksymalna liczba poświadczeń, które mogą być wydane na godzinę dla wszystkich kursów używających konfiguracji tej kategorii. Pozostaw puste dla braku limitu.';
 
 // Roles.
 $string['credentiumcoursemanager'] = 'Menedżer kursów Credentium';
-$string['credentiumcoursemanager_desc'] = 'Może konfigurować integrację Credentium dla kursów. Przypisz tę rolę użytkownikom na poziomie kursu lub kategorii, aby przyznać im uprawnienia do włączania i konfigurowania cyfrowych certyfikatów.';
+$string['credentiumcoursemanager_desc'] = 'Może konfigurować integrację Credentium dla kursów. Przypisz tę rolę użytkownikom na poziomie kursu lub kategorii, aby przyznać im uprawnienia do włączania i konfigurowania cyfrowych poświadczeń.';
 
 // Capabilities.
 $string['credentium:manage'] = 'Zarządzanie ustawieniami Credentium';
 $string['credentium:managecourse'] = 'Zarządzanie ustawieniami Credentium kursu';
 $string['credentium:managecategory'] = 'Zarządzanie ustawieniami Credentium kategorii';
 $string['credentium:viewreports'] = 'Przeglądanie raportów Credentium';
-$string['credentium:viewowncredentials'] = 'Przeglądanie własnych certyfikatów';
+$string['credentium:viewowncredentials'] = 'Przeglądanie własnych poświadczeń';
 
 // Events.
-$string['eventcredentialissued'] = 'Certyfikat wydany';
-$string['eventcredentialfailed'] = 'Wydanie certyfikatu nie powiodło się';
+$string['eventcredentialissued'] = 'Poświadczenie wydane';
+$string['eventcredentialfailed'] = 'Wydanie poświadczenia nie powiodło się';
 $string['eventapierror'] = 'Błąd API Credentium';
 
 // Report.
 $string['report'] = 'Raport Credentium';
-$string['issuancehistory'] = 'Historia wydawania certyfikatów';
+$string['issuancehistory'] = 'Historia wydawania poświadczeń';
 $string['user'] = 'Użytkownik';
 $string['course'] = 'Kurs';
-$string['credentialid'] = 'ID certyfikatu';
+$string['credentialid'] = 'ID poświadczenia';
 $string['status'] = 'Status';
 $string['issuedate'] = 'Data wydania';
 $string['actions'] = 'Akcje';
@@ -178,8 +182,8 @@ $string['status_retrying'] = 'Ponawianie';
 // Errors.
 $string['error:apinotconfigured'] = 'API Credentium nie jest poprawnie skonfigurowane.';
 $string['error:coursenotfound'] = 'Kurs nie został znaleziony.';
-$string['error:invalidtemplate'] = 'Wybrano nieprawidłowy szablon certyfikatu.';
-$string['error:issuancefailed'] = 'Nie udało się wydać certyfikatu: {$a}';
+$string['error:invalidtemplate'] = 'Wybrano nieprawidłowy szablon poświadczenia.';
+$string['error:issuancefailed'] = 'Nie udało się wydać poświadczenia: {$a}';
 $string['error:nopermission'] = 'Nie masz uprawnień dostępu do tej strony.';
 $string['error:notenabled'] = 'Integracja Credentium nie jest włączona.';
 $string['error:categorymodedisabled'] = 'Tryb kategorii nie jest włączony. Włącz go najpierw w globalnych ustawieniach Credentium.';
@@ -193,50 +197,57 @@ $string['template_unsupported_suffix'] = '(nieobsługiwany)';
 $string['template_unsupported_warning'] = 'Ten szablon zawiera {$a} ocen uczenia się (Learning Assessments). Wtyczka obsługuje obecnie tylko szablony z maksymalnie 1 oceną uczenia się. Wybierz inny szablon.';
 
 // Tasks.
-$string['task:issueCredentials'] = 'Wydaj oczekujące certyfikaty';
-$string['task:retryFailedIssuances'] = 'Ponów nieudane wydania certyfikatów';
-$string['task:syncTemplates'] = 'Synchronizuj szablony certyfikatów';
-$string['task:processpending'] = 'Przetwarzaj oczekujące certyfikaty';
-$string['task:cleanupoldissuances'] = 'Wyczyść stare rekordy wydanych certyfikatów (RODO)';
+$string['task:issueCredentials'] = 'Wydaj oczekujące poświadczenia';
+$string['task:retryFailedIssuances'] = 'Ponów nieudane wydania poświadczeń';
+$string['task:syncTemplates'] = 'Synchronizuj szablony poświadczeń';
+$string['task:processpending'] = 'Przetwarzaj oczekujące poświadczenia';
+$string['task:cleanupoldissuances'] = 'Wyczyść stare rekordy wydanych poświadczeń (RODO)';
 
 // Template selection.
 $string['selecttemplate'] = 'Wybierz szablon...';
 $string['notemplates'] = 'Brak dostępnych szablonów';
 $string['refreshtemplates'] = 'Odśwież szablony';
-$string['sendgrade'] = 'Wyślij ocenę z certyfikatem';
-$string['sendgrade_help'] = 'Po włączeniu końcowa ocena studenta z kursu zostanie dołączona do certyfikatu. Jeśli agregacja ocen jest nadal w toku w momencie ukończenia kursu, system będzie ponawiać próbę, aby zapewnić dołączenie prawidłowej oceny.';
-$string['issuanceinfo'] = 'Automatyczne wydawanie certyfikatów';
-$string['issuanceinfo_desc'] = '<strong>Ważne:</strong> Gdy Credentium jest włączone dla tego kursu, mikropoświadczenia będą automatycznie wydawane wszystkim studentom, którzy ukończą kurs. Upewnij się, że wybrałeś odpowiedni szablon certyfikatu przed włączeniem.';
-$string['issuanceinfo_help'] = 'Certyfikaty są wydawane automatycznie po ukończeniu kursu. Możesz wybrać, czy dołączyć ocenę z kursu do certyfikatu, używając powyższej opcji.';
+$string['sendgrade'] = 'Wyślij ocenę z poświadczeniem';
+$string['sendgrade_help'] = 'Po włączeniu końcowa ocena studenta z kursu zostanie dołączona do poświadczenia. Jeśli agregacja ocen jest nadal w toku w momencie ukończenia kursu, system będzie ponawiać próbę, aby zapewnić dołączenie prawidłowej oceny.';
+$string['issuanceinfo'] = 'Automatyczne wydawanie poświadczeń';
+$string['issuanceinfo_desc'] = '<strong>Ważne:</strong> Gdy Credentium jest włączone dla tego kursu, mikropoświadczenia będą automatycznie wydawane wszystkim studentom, którzy ukończą kurs. Upewnij się, że wybrałeś odpowiedni szablon poświadczenia przed włączeniem.';
+$string['issuanceinfo_help'] = 'Poświadczenia są wydawane automatycznie po ukończeniu kursu. Możesz wybrać, czy dołączyć ocenę z kursu do poświadczenia, używając powyższej opcji.';
 $string['templaterefreshed'] = 'Szablony odświeżone pomyślnie';
 
 // Bulk operations.
 $string['selectstudents'] = 'Wybierz studentów';
 $string['issueselected'] = 'Wydaj wybranym studentom';
-$string['bulkissuanceinitiated'] = 'Zainicjowano masowe wydanie certyfikatów dla {$a} studentów.';
+$string['bulkissuanceinitiated'] = 'Zainicjowano masowe wydanie poświadczeń dla {$a} studentów.';
 
 // Notifications.
-$string['notification:credentialissued'] = 'Twój certyfikat dla {$a} został pomyślnie wydany!';
-$string['notification:credentialfailed'] = 'Wystąpił błąd podczas wydawania certyfikatu dla {$a}. Automatycznie ponowimy próbę.';
+$string['messageprovider:credentialissuance'] = 'Powiadomienia o cyfrowych poświadczeniach';
+$string['notification:credentialissued_subject'] = 'Masz nowe cyfrowe poświadczenie';
+$string['notification:credentialissued'] = 'Gratulujemy ukończenia kursu {$a}! Zleciliśmy wystawienie Twojego cyfrowego poświadczenia.
+
+Poświadczenie jest zwykle gotowe w ciągu 15 minut. Otrzymasz osobne powiadomienie, gdy będzie gotowe do odbioru.';
+$string['notification:credentialfailed_subject'] = 'Problem z Twoim cyfrowym poświadczeniem';
+$string['notification:credentialfailed'] = 'Nie udało się zlecić wystawienia Twojego cyfrowego poświadczenia za kurs {$a}.
+
+Skontaktuj się z prowadzącym kurs lub administratorem serwisu, aby sprawdzili, co poszło nie tak.';
 
 // Course completion settings.
 $string['completionrequired'] = 'Wymagane ukończenie kursu';
-$string['completionrequired_help'] = 'Studenci muszą ukończyć kurs przed otrzymaniem certyfikatów.';
+$string['completionrequired_help'] = 'Studenci muszą ukończyć kurs przed otrzymaniem poświadczeń.';
 $string['graderequired'] = 'Wymagana minimalna ocena';
-$string['graderequired_help'] = 'Studenci muszą osiągnąć tę ocenę lub wyższą, aby otrzymać certyfikaty.';
+$string['graderequired_help'] = 'Studenci muszą osiągnąć tę ocenę lub wyższą, aby otrzymać poświadczenia.';
 
 // View credential.
-$string['viewcredential'] = 'Wyświetl certyfikat';
-$string['credentialdetails'] = 'Szczegóły certyfikatu';
-$string['viewcredentialexternal'] = 'Wyświetl certyfikat w Credentium';
+$string['viewcredential'] = 'Wyświetl poświadczenie';
+$string['credentialdetails'] = 'Szczegóły poświadczenia';
+$string['viewcredentialexternal'] = 'Wyświetl poświadczenie w Credentium';
 $string['retryscheduled'] = 'Zaplanowano ponowną próbę.';
 $string['recordnotfound'] = 'Nie znaleziono rekordu.';
-$string['processcredentials'] = 'Przetwarzaj certyfikaty';
-$string['processingcredentials'] = 'Przetwarzanie oczekujących certyfikatów';
-$string['nopendingcredentials'] = 'Brak oczekujących certyfikatów do przetworzenia.';
-$string['processingcount'] = 'Przetwarzanie {$a} oczekujących certyfikatów...';
+$string['processcredentials'] = 'Przetwarzaj poświadczenia';
+$string['processingcredentials'] = 'Przetwarzanie oczekujących poświadczeń';
+$string['nopendingcredentials'] = 'Brak oczekujących poświadczeń do przetworzenia.';
+$string['processingcount'] = 'Przetwarzanie {$a} oczekujących poświadczeń...';
 $string['backtoreport'] = 'Powrót do raportu';
-$string['processpending'] = 'Przetwarzaj {$a} oczekujących certyfikatów';
+$string['processpending'] = 'Przetwarzaj {$a} oczekujących poświadczeń';
 $string['refresh'] = 'Odśwież';
 $string['searchuser'] = 'Szukaj użytkownika po nazwie lub e-mailu';
 $string['all'] = 'Wszystkie';
