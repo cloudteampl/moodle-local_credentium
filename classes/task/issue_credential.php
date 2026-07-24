@@ -380,25 +380,31 @@ class issue_credential extends \core\task\adhoc_task {
      * @param bool $success Whether the issuance was successful
      */
     private function send_notification($user, $course, $success) {
+        $context = \context_course::instance($course->id);
+        $stringkey = $success ? 'notification:credentialissued' : 'notification:credentialfailed';
+
+        // The course name goes into both a plain-text and an HTML rendering of the same string,
+        // so it has to be formatted twice: unescaped for the plain part, escaped for the HTML part.
+        $coursenameplain = format_string($course->fullname, true, ['context' => $context, 'escape' => false]);
+        $coursenamehtml = format_string($course->fullname, true, ['context' => $context]);
+
+        $subject = get_string($stringkey . '_subject', 'local_credentium');
+        $body = get_string($stringkey, 'local_credentium', $coursenameplain);
+
         $message = new \core\message\message();
         $message->component = 'local_credentium';
         $message->name = 'credentialissuance';
         $message->userfrom = \core_user::get_noreply_user();
         $message->userto = $user;
-        $message->subject = get_string('pluginname', 'local_credentium');
-        
-        if ($success) {
-            $message->fullmessage = get_string('notification:credentialissued', 'local_credentium', $course->fullname);
-            $message->fullmessageformat = FORMAT_PLAIN;
-            $message->fullmessagehtml = get_string('notification:credentialissued', 'local_credentium', $course->fullname);
-            $message->notification = 1;
-        } else {
-            $message->fullmessage = get_string('notification:credentialfailed', 'local_credentium', $course->fullname);
-            $message->fullmessageformat = FORMAT_PLAIN;
-            $message->fullmessagehtml = get_string('notification:credentialfailed', 'local_credentium', $course->fullname);
-            $message->notification = 1;
-        }
-        
+        // The subject is what Moodle shows as the headline in the notification list,
+        // so it must describe the event, not the plugin.
+        $message->subject = $subject;
+        $message->fullmessage = $body;
+        $message->fullmessageformat = FORMAT_PLAIN;
+        $message->fullmessagehtml = nl2br(get_string($stringkey, 'local_credentium', $coursenamehtml));
+        $message->smallmessage = $subject;
+        $message->notification = 1;
+
         message_send($message);
     }
 

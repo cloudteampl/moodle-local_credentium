@@ -220,8 +220,15 @@ $string['issueselected'] = 'Issue to selected students';
 $string['bulkissuanceinitiated'] = 'Bulk credential issuance initiated for {$a} students.';
 
 // Notifications.
-$string['notification:credentialissued'] = 'Your credential for {$a} has been issued successfully!';
-$string['notification:credentialfailed'] = 'There was an error issuing your credential for {$a}. We will retry automatically.';
+$string['messageprovider:credentialissuance'] = 'Digital credential notifications';
+$string['notification:credentialissued_subject'] = 'You\'ve earned a digital credential';
+$string['notification:credentialissued'] = 'Congratulations! You have completed {$a} and we have requested your digital credential.
+
+Your credential is normally ready within 15 minutes. You will receive a separate notification as soon as it is ready to claim.';
+$string['notification:credentialfailed_subject'] = 'Problem with your digital credential';
+$string['notification:credentialfailed'] = 'We were unable to request your digital credential for {$a}.
+
+Please contact your teacher or the site administrator so they can look into it.';
 
 // Course completion settings.
 $string['completionrequired'] = 'Course completion required';
