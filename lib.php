@@ -270,6 +270,12 @@ function local_credentium_resolve_category_config($courseid) {
 
     // Static cache to avoid repeated queries in same request
     static $cache = [];
+    if (defined('PHPUNIT_TEST') && PHPUNIT_TEST) {
+        // A function-level static outlives the per-test database reset, so under
+        // PHPUnit a cached entry can describe a course id that now belongs to a
+        // different course. Tests always start from a cold cache instead.
+        $cache = [];
+    }
     if (isset($cache[$courseid])) {
         return $cache[$courseid];
     }
