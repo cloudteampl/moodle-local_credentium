@@ -36,7 +36,7 @@ final class claim_sync_interval_test extends \advanced_testcase {
         global $CFG;
         parent::setUp();
         $this->resetAfterTest(true);
-        require_once($CFG->dirroot . '/local/credentiumclaim/lib.php');
+        require_once($CFG->dirroot . '/local/credentium/lib.php');
     }
 
     public function test_default_schedule_is_every_fifteen_minutes(): void {

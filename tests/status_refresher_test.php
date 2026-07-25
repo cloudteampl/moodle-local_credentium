@@ -217,7 +217,7 @@ final class status_refresher_test extends \advanced_testcase {
         //
         // The ordering is a property of the page script, and this plugin has no Behat
         // suite to drive it, so it is pinned here rather than left to be re-broken.
-        $page = file_get_contents($CFG->dirroot . '/local/credentiumclaim/mycredentials.php');
+        $page = file_get_contents($CFG->dirroot . '/local/credentium/mycredentials.php');
         $refresh = strpos($page, 'refresh_for_user');
         $header = strpos($page, '$OUTPUT->header()');
 
