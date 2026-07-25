@@ -43,17 +43,17 @@ class lib_test extends \advanced_testcase {
     /**
      * Test encryption and decryption of API keys.
      */
-    public function test_encrypt_decrypt_apikey() {
+    public function test_encrypt_decrypt_key() {
         $this->resetAfterTest();
 
         $original = 'test-api-key-12345';
 
         // Encrypt.
-        $encrypted = local_credentium_encrypt_apikey($original);
+        $encrypted = local_credentium_encrypt_key($original);
         $this->assertNotEquals($original, $encrypted);
 
         // Decrypt.
-        $decrypted = local_credentium_decrypt_apikey($encrypted);
+        $decrypted = local_credentium_decrypt_key($encrypted);
         $this->assertEquals($original, $decrypted);
     }
 
@@ -76,8 +76,9 @@ class lib_test extends \advanced_testcase {
         $config->ratelimit = 100;
 
         // Save.
+        // Returns the new record id on insert and true on update; both are truthy.
         $result = local_credentium_save_category_config($config);
-        $this->assertTrue($result);
+        $this->assertNotEmpty($result);
 
         // Get.
         $retrieved = local_credentium_get_category_config($category->id);
@@ -107,8 +108,9 @@ class lib_test extends \advanced_testcase {
         $config->inherit_category = 1;
 
         // Save.
+        // Returns the new record id on insert and true on update; both are truthy.
         $result = local_credentium_save_course_config($config);
-        $this->assertTrue($result);
+        $this->assertNotEmpty($result);
 
         // Get.
         $retrieved = local_credentium_get_course_config($course->id);
@@ -125,6 +127,10 @@ class lib_test extends \advanced_testcase {
     public function test_resolve_category_config() {
         $this->resetAfterTest();
 
+        // Category-tree resolution only happens in category mode; without it the
+        // resolver deliberately answers with the global configuration.
+        set_config('categorymode', 1, 'local_credentium');
+
         // Create category hierarchy: parent -> child
         $parent = $this->getDataGenerator()->create_category();
         $child = $this->getDataGenerator()->create_category(['parent' => $parent->id]);
@@ -137,8 +143,11 @@ class lib_test extends \advanced_testcase {
         $config->apikey = 'parent-key';
         local_credentium_save_category_config($config);
 
-        // Resolve child category (should inherit from parent).
-        $resolved = local_credentium_resolve_category_config($child->id);
+        // The resolver takes a COURSE id and walks up from the course's category.
+        $course = $this->getDataGenerator()->create_course(['category' => $child->id]);
+
+        // Resolve for a course in the child category (should inherit from parent).
+        $resolved = local_credentium_resolve_category_config($course->id);
         $this->assertNotNull($resolved);
         $this->assertEquals($parent->id, $resolved->categoryid);
         $this->assertEquals('https://parent.credentium.com', $resolved->apiurl);

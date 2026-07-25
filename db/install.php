@@ -30,8 +30,13 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool
  */
 function xmldb_local_credentium_install() {
-    // No post-installation tasks required.
-    // Site administrators can manage Credentium capabilities through the standard
-    // Moodle permissions system (Site Administration > Users > Permissions > Define roles).
+    // Persist the claim banner default at install time. The setting lives on a
+    // custom moodleform, so unlike an admin_setting its default is never written
+    // automatically; runtime code treats an unset value as "on" anyway, but
+    // persisting it keeps what the admin UI shows and what the site does in sync.
+    set_config('showbanner', 1, 'local_credentium');
+
+    // Everything else is managed through the standard Moodle permissions system
+    // (Site Administration > Users > Permissions > Define roles).
     return true;
 }

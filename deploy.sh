@@ -72,6 +72,7 @@ rsync -a \
     --exclude='.buildignore' \
     --exclude='DEPLOYMENT.md' \
     --exclude='CLAUDE.md' \
+    --exclude='docs' \
     --exclude='screenshots' \
     --exclude='dist' \
     --exclude='*.zip' \
@@ -88,7 +89,11 @@ critical_files=(
     "settings.php"
     "db/install.xml"
     "db/access.php"
+    "db/hooks.php"
     "lang/en/local_credentium.php"
+    "templates/banner.mustache"
+    "mycredentials.php"
+    "claimreport.php"
 )
 missing_files=()
 for file in "${critical_files[@]}"; do

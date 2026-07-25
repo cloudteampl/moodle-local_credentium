@@ -53,6 +53,9 @@ class lang_test extends \advanced_testcase {
      */
     private const ALLOW_IDENTICAL = [
         'status',
+        // "Status" is the same word in Polish; these label claim-status columns.
+        'col_status',
+        'report_status',
     ];
 
     /**

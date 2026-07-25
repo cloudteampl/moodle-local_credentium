@@ -64,7 +64,22 @@ class provider implements
             'privacy:metadata:local_credentium_issuances'
         );
 
-        // External service - Credentium API (PAID commercial service).
+        // Claim tracking (which issued credentials a learner has collected).
+        $collection->add_database_table(
+            'local_credentium_claims',
+            [
+                'userid' => 'privacy:metadata:local_credentium_claims:userid',
+                'credentialkey' => 'privacy:metadata:local_credentium_claims:credentialkey',
+                'credentialid' => 'privacy:metadata:local_credentium_claims:credentialid',
+                'courseid' => 'privacy:metadata:local_credentium_claims:courseid',
+                'remotestatus' => 'privacy:metadata:local_credentium_claims:remotestatus',
+                'timecreated' => 'privacy:metadata:local_credentium_claims:timecreated',
+            ],
+            'privacy:metadata:local_credentium_claims'
+        );
+
+        // External service - Credentium API (PAID commercial service). Covers both
+        // the issue call and the claim-feature calls (status polls, claim links).
         $collection->add_external_location_link(
             'credentium_api',
             [
@@ -74,6 +89,8 @@ class provider implements
                 'coursename' => 'privacy:metadata:credentium_api:coursename',
                 'grade' => 'privacy:metadata:credentium_api:grade',
                 'templateid' => 'privacy:metadata:credentium_api:templateid',
+                'issuerequestid' => 'privacy:metadata:credentium_api:issuerequestid',
+                'locale' => 'privacy:metadata:credentium_api:locale',
             ],
             'privacy:metadata:credentium_api'
         );
@@ -117,15 +134,28 @@ class provider implements
      */
     public static function get_users_in_context(userlist $userlist) {
         $context = $userlist->get_context();
-        
+
         if ($context->contextlevel == CONTEXT_COURSE) {
             // Get users with credential issuances in this course.
             $sql = "SELECT DISTINCT userid
                       FROM {local_credentium_issuances}
                      WHERE courseid = :courseid";
-            
+
             $params = ['courseid' => $context->instanceid];
             $userlist->add_from_sql('userid', $sql, $params);
+        } else if ($context->contextlevel == CONTEXT_USER) {
+            // A user's own context holds their issuance history and claim tracking.
+            $params = ['userid' => $context->instanceid];
+            $userlist->add_from_sql(
+                'userid',
+                "SELECT userid FROM {local_credentium_issuances} WHERE userid = :userid",
+                $params
+            );
+            $userlist->add_from_sql(
+                'userid',
+                "SELECT userid FROM {local_credentium_claims} WHERE userid = :userid",
+                $params
+            );
         }
     }
     
@@ -210,6 +240,30 @@ class provider implements
                         (object)['issuances' => $data]
                     );
                 }
+
+                // Claim tracking rows live in the user's own context too.
+                $claims = $DB->get_records('local_credentium_claims', ['userid' => $userid], 'timecreated ASC');
+                if ($claims) {
+                    $data = [];
+                    foreach ($claims as $claim) {
+                        $coursename = '';
+                        if (!empty($claim->courseid)) {
+                            $fullname = $DB->get_field('course', 'fullname', ['id' => $claim->courseid]);
+                            $coursename = ($fullname !== false) ? $fullname : '';
+                        }
+                        $data[] = [
+                            'coursename' => $coursename,
+                            'credentialkey' => $claim->credentialkey,
+                            'credentialid' => $claim->credentialid,
+                            'status' => $claim->remotestatus,
+                            'timecreated' => transform::datetime($claim->timecreated),
+                        ];
+                    }
+                    writer::with_context($context)->export_data(
+                        [get_string('pluginname', 'local_credentium'), get_string('mycredentials', 'local_credentium')],
+                        (object)['credentials' => $data]
+                    );
+                }
             }
         }
     }
@@ -221,10 +275,17 @@ class provider implements
      */
     public static function delete_data_for_all_users_in_context(\context $context) {
         global $DB;
-        
+
         if ($context->contextlevel == CONTEXT_COURSE) {
             // Delete all credential issuances for this course.
             $DB->delete_records('local_credentium_issuances', ['courseid' => $context->instanceid]);
+        } else if ($context->contextlevel == CONTEXT_USER) {
+            // A user context belongs to exactly one user: remove everything this
+            // plugin holds about them, mirroring delete_data_for_user() — the two
+            // deletion APIs must not disagree about what a user-context wipe means.
+            $DB->delete_records('local_credentium_issuances', ['userid' => $context->instanceid]);
+            $DB->delete_records('local_credentium_claims', ['userid' => $context->instanceid]);
+            \local_credentium\local\claimable::purge_cache((int) $context->instanceid);
         }
     }
     
@@ -250,8 +311,10 @@ class provider implements
                     'courseid' => $context->instanceid,
                 ]);
             } else if ($context->contextlevel == CONTEXT_USER && $context->instanceid == $userid) {
-                // Delete all credential issuances for this user.
+                // Delete all credential issuances and claim tracking for this user.
                 $DB->delete_records('local_credentium_issuances', ['userid' => $userid]);
+                $DB->delete_records('local_credentium_claims', ['userid' => $userid]);
+                \local_credentium\local\claimable::purge_cache((int) $userid);
             }
         }
     }
@@ -271,9 +334,19 @@ class provider implements
             if (!empty($userids)) {
                 list($insql, $params) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
                 $params['courseid'] = $context->instanceid;
-                
+
                 $DB->delete_records_select('local_credentium_issuances',
                     "userid $insql AND courseid = :courseid", $params);
+            }
+        } else if ($context->contextlevel == CONTEXT_USER) {
+            // A user context belongs to exactly one user; act only when they are listed.
+            // Delete both tables, mirroring delete_data_for_user(): the userlist API
+            // must never advertise data (via get_users_in_context) it would not remove.
+            $userids = $userlist->get_userids();
+            if (!empty($userids) && in_array($context->instanceid, $userids)) {
+                $DB->delete_records('local_credentium_issuances', ['userid' => $context->instanceid]);
+                $DB->delete_records('local_credentium_claims', ['userid' => $context->instanceid]);
+                \local_credentium\local\claimable::purge_cache((int) $context->instanceid);
             }
         }
     }

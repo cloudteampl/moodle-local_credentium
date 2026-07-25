@@ -118,6 +118,34 @@ try {
         echo $OUTPUT->notification(get_string('testconnection_no_templates', 'local_credentium'), 'notifyproblem');
     }
 
+    // The template probe only proves the templates:read scope, which issuing needs.
+    // The claim feature (status checks + claim links) lives on credentials:read, so
+    // probe that too — otherwise a key that can issue but not read would test
+    // "successful" here and then fail on every claim status check. A status query for
+    // an id that cannot exist is answered with an empty result set, so this costs
+    // nothing. The claim client normalises the stored URL's /api suffix itself.
+    $claimclient = new \local_credentium\api\claim_client(
+        \local_credentium\local\claim_config::normalize_base_url((string) $apiurl),
+        $apikey
+    );
+    $claimclient->get_status_batch(['00000000-0000-0000-0000-000000000000']);
+    $readerror = $claimclient->get_last_error();
+    if ($readerror === null) {
+        echo $OUTPUT->notification(get_string('testconnection_readscope_ok', 'local_credentium'), 'notifysuccess');
+    } else if ($claimclient->last_error_was_auth()) {
+        // Only a 401 justifies "widen the key's scope"; a timeout or a 500 would
+        // send the admin off editing a key that was never the problem.
+        echo $OUTPUT->notification(
+            get_string('testconnection_readscope_fail', 'local_credentium', s($readerror)),
+            'notifyproblem'
+        );
+    } else {
+        echo $OUTPUT->notification(
+            get_string('testconnection_readscope_error', 'local_credentium', s($readerror)),
+            'notifywarning'
+        );
+    }
+
 } catch (\Exception $e) {
     echo $OUTPUT->notification(get_string('connectionfailed', 'local_credentium', $e->getMessage()), 'notifyproblem');
 

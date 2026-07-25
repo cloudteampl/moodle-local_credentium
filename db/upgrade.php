@@ -196,5 +196,96 @@ function xmldb_local_credentium_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026012100, 'local', 'credentium');
     }
 
+    if ($oldversion < 2026072500) {
+        // Version 3.0.0: the Credentium Claim plugin (local_credentiumclaim) is
+        // absorbed into this plugin. Create the claim tracking table, migrate the
+        // legacy plugin's data and settings when it is present, and switch the
+        // legacy plugin off so its banner/task cannot double up with the built-in
+        // ones. The admin is told (settings page + claim report) to uninstall it;
+        // uninstalling is what removes its table and config for good.
+
+        // Step 1: Create the claim tracking table (mirrors db/install.xml).
+        $table = new xmldb_table('local_credentium_claims');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('credentialkey', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('issuanceid', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('credentialid', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('remotestatus', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'processing');
+        $table->add_field('dismissed', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timechecked', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('courseid', XMLDB_KEY_FOREIGN, ['courseid'], 'course', ['id']);
+        $table->add_key('useridcredentialkey', XMLDB_KEY_UNIQUE, ['userid', 'credentialkey']);
+        $table->add_index('credentialkey', XMLDB_INDEX_NOTUNIQUE, ['credentialkey']);
+        $table->add_index('remotestatus', XMLDB_INDEX_NOTUNIQUE, ['remotestatus']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Step 2: Migrate the legacy plugin's tracking rows. Preserving remotestatus,
+        // dismissed and timechecked is what stops learners from being re-notified
+        // (or re-shown a banner they dismissed) after the upgrade. Guarded by the
+        // unique (userid, credentialkey) key so a re-run cannot duplicate rows.
+        if ($dbman->table_exists('local_credentiumclaim_status')) {
+            $rs = $DB->get_recordset('local_credentiumclaim_status');
+            foreach ($rs as $old) {
+                if ($DB->record_exists('local_credentium_claims',
+                        ['userid' => $old->userid, 'credentialkey' => $old->credentialkey])) {
+                    continue;
+                }
+                unset($old->id);
+                $DB->insert_record('local_credentium_claims', $old);
+            }
+            $rs->close();
+        }
+
+        // Step 3: Migrate the legacy plugin's settings onto this component's keys.
+        // Only copy values that exist, and never overwrite one already set here.
+        $map = [
+            'enabled' => 'claimenabled',
+            'showbanner' => 'showbanner',
+            'lastrun' => 'claimlastrun',
+            'lastrunresult' => 'claimlastrunresult',
+            'lastrunpolled' => 'claimlastrunpolled',
+            'lastrunupdated' => 'claimlastrunupdated',
+            'lastrununmatched' => 'claimlastrununmatched',
+            'lastrununanswered' => 'claimlastrununanswered',
+            'lastrununresolved' => 'claimlastrununresolved',
+            'lastrunnotified' => 'claimlastrunnotified',
+            'lastrunnotifyfailed' => 'claimlastrunnotifyfailed',
+            'lastrunerror' => 'claimlastrunerror',
+            'lastrunerrorkind' => 'claimlastrunerrorkind',
+        ];
+        foreach ($map as $oldkey => $newkey) {
+            $value = get_config('local_credentiumclaim', $oldkey);
+            if ($value !== false && get_config('local_credentium', $newkey) === false) {
+                set_config($newkey, $value, 'local_credentium');
+            }
+        }
+        if (get_config('local_credentium', 'showbanner') === false) {
+            // No legacy value to inherit: persist the documented default (on).
+            set_config('showbanner', 1, 'local_credentium');
+        }
+
+        // Step 4: Neutralise the legacy plugin. All of its surfaces (banner, user
+        // menu, task, pages) are gated on its own 'enabled' flag, so this silences
+        // it immediately even before the admin uninstalls it. The custom sync
+        // interval, if any, is not carried over — the built-in task starts at the
+        // 15-minute default and the interval is a one-click setting.
+        if (get_config('local_credentiumclaim', 'enabled') !== false) {
+            set_config('enabled', 0, 'local_credentiumclaim');
+        }
+
+        // No explicit cache purge: Moodle's upgrade pipeline purges caches after
+        // plugin upgrades, and the 'claimable' MUC definition is new in this
+        // version, so there is nothing stale to invalidate.
+
+        upgrade_plugin_savepoint(true, 2026072500, 'local', 'credentium');
+    }
+
     return true;
 }

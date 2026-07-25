@@ -78,4 +78,15 @@ $capabilities = [
             'user' => CAP_ALLOW,
         ],
     ],
+
+    // Claim own Credentium credentials (see the reminder banner and the
+    // "My credentials" page). Granted to all authenticated users by default.
+    'local/credentium:claim' => [
+        'riskbitmask' => RISK_PERSONAL,
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_USER,
+        'archetypes' => [
+            'user' => CAP_ALLOW,
+        ],
+    ],
 ];

@@ -25,6 +25,7 @@
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 require_once($CFG->libdir . '/tablelib.php');
+require_once(__DIR__ . '/lib.php');
 
 $action = optional_param('action', '', PARAM_ALPHA);
 $id = optional_param('id', 0, PARAM_INT);
@@ -104,6 +105,7 @@ if ($action === 'retry' && $id) {
 }
 
 echo $OUTPUT->header();
+echo local_credentium_report_tabs('issuances');
 
     // Add buttons for processing credentials and refreshing the page.
     echo html_writer::start_div('mb-3');

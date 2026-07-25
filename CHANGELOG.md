@@ -5,6 +5,49 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-07-25
+
+### Added
+- **Claim reminders built in**: the separate *Credentium® Claim* plugin
+  (`local_credentiumclaim` 1.5.2) is absorbed into this plugin in its entirety.
+  Issued credentials are now tracked to see whether the learner has actually
+  claimed them, and learners are reminded three ways the moment one becomes
+  claimable: a one-time bell/email notification, a persistent **My credentials
+  (N)** entry in the user menu and profile, and a dismissible banner. "Claim"
+  mints a single-use claim link through the Credentium® v2 API and opens the
+  learner's Wallet; claimed credentials keep a "View in wallet" action.
+- New **Claim reminders** section on the settings page: enable switch, status
+  check interval (5 minutes – 4 hours; rewrites the scheduled task's cron
+  expression), and banner toggle.
+- New admin report **Credentium® Claim status** (status breakdown, task
+  diagnostics, per-cause failure advice, "Check status now"), cross-linked
+  with the issuance report via tabs.
+- **Test connection** now also probes the `credentials:read` scope the claim
+  feature needs, and says explicitly when the key lacks it.
+- New scheduled task `sync_claim_status` (default every 15 minutes), new
+  `local_credentium_claims` table, new `local/credentium:claim` capability
+  (allowed for authenticated users), new `credentialready` message provider.
+- Missing language strings for the API client's exception identifiers
+  (`apierror`, `apinotconfigured`, `invalidjsonresponse`, `invalidresponse`,
+  `issuancefailed`) in both language packs.
+- GitHub Actions CI (moodle-plugin-ci: phplint, validate, savepoints,
+  mustache lint and PHPUnit on Moodle 4.5/PHP 8.2 and Moodle 5.0/PHP 8.3).
+
+### Changed
+- **BREAKING / upgrade note**: sites running the separate Credentium® Claim
+  plugin should upgrade this plugin first. The upgrade migrates all claim
+  tracking rows (preserving claim status, banner dismissals and check
+  timestamps — nobody is re-notified) and the Claim plugin's settings, then
+  disables the legacy plugin. **Uninstall `local_credentiumclaim` afterwards**;
+  the settings page and claim report keep reminding you until it is gone.
+- A customised claim status-check interval is *not* carried over from the
+  legacy plugin: the new task starts at the 15-minute default — re-select the
+  interval in the settings if you had changed it.
+- Minimum required Moodle version is now 4.5 (`2024100700`): the banner and
+  user-menu surfaces use the Hooks API. The plugin already only supported
+  4.5–5.0, so no supported site is affected.
+- The build package now excludes internal development documents (`docs/`).
+
 ## [2.0.7] - 2026-07-24
 
 ### Fixed

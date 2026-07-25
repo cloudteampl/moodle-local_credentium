@@ -1,0 +1,121 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * "My credentials" page: lists a learner's Credentium credentials to claim or view.
+ *
+ * @package    local_credentium
+ * @copyright  2025 CloudTeam Sp. z o.o.
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/lib.php');
+
+use local_credentium\local\claimable;
+use local_credentium\local\status_refresher;
+
+require_login();
+require_capability('local/credentium:claim', context_user::instance($USER->id));
+
+$PAGE->set_url(new moodle_url('/local/credentium/mycredentials.php'));
+// System context on purpose. A user context makes Moodle draw its profile header
+// above the page — avatar, full name and a "Message" button — so a page about your
+// own credentials ended up offering to message yourself. (Core's badges/mybadges.php
+// does use a user context and inherits exactly that; it is not a pattern worth
+// copying here.) The capability is still checked against the user context above; the
+// page context only decides what gets drawn. The page's own name is the heading, so
+// it is rendered once, by the layout.
+$PAGE->set_context(context_system::instance());
+$PAGE->set_pagelayout('standard');
+$PAGE->set_title(get_string('mycredentials', 'local_credentium'));
+$PAGE->set_heading(get_string('mycredentials_heading', 'local_credentium'));
+$PAGE->navbar->add(get_string('mycredentials', 'local_credentium'));
+
+$enabled = local_credentium_claim_enabled();
+
+if ($enabled) {
+    // Bring stale statuses up to date before rendering, so a credential the learner
+    // claimed in Credentium moments ago does not still offer a "Claim" button here.
+    // Bounded, throttled and silent on failure — see status_refresher.
+    //
+    // Before the header, not after: the header draws the user menu and the banner,
+    // both of which count this learner's claimable credentials. Refreshing afterwards
+    // left them a request behind — the menu said "My credentials" with no count while
+    // the table below it already showed a credential as ready to claim.
+    (new status_refresher())->refresh_for_user((int) $USER->id);
+}
+
+echo $OUTPUT->header();
+
+if (!$enabled) {
+    echo $OUTPUT->notification(
+        get_string('error:claimnotconfigured', 'local_credentium'),
+        \core\output\notification::NOTIFY_INFO
+    );
+    echo $OUTPUT->footer();
+    die();
+}
+
+$rows = claimable::list_for_user($USER->id);
+
+if (empty($rows)) {
+    echo $OUTPUT->notification(
+        get_string('mycredentials_empty', 'local_credentium'),
+        \core\output\notification::NOTIFY_INFO
+    );
+} else {
+    echo html_writer::tag('p', get_string('mycredentials_intro', 'local_credentium'));
+
+    $table = new html_table();
+    $table->head = [
+        get_string('col_course', 'local_credentium'),
+        get_string('col_status', 'local_credentium'),
+        get_string('col_action', 'local_credentium'),
+    ];
+    $table->attributes['class'] = 'generaltable';
+
+    foreach ($rows as $row) {
+        $coursename = '-';
+        if (!empty($row->courseid)) {
+            $fullname = $DB->get_field('course', 'fullname', ['id' => $row->courseid]);
+            if ($fullname !== false) {
+                $coursename = format_string($fullname);
+            }
+        }
+
+        $statuslabel = get_string('claimstatus_' . $row->remotestatus, 'local_credentium');
+
+        // Issued and claimed rows both act through claim.php, which mints the URL from
+        // the API at click time and redirects to it — the URL (a single-use secret for
+        // an issued credential) is never rendered into this page. Only the label and
+        // emphasis differ: "Claim" for something to collect, "View in wallet" for
+        // something already collected. Processing and any other state offer no action.
+        if ($row->remotestatus === claimable::STATUS_ISSUED) {
+            $action = local_credentium_claim_action_button((int) $row->id, 'claim', 'btn-primary');
+        } else if ($row->remotestatus === claimable::STATUS_CLAIMED) {
+            $action = local_credentium_claim_action_button((int) $row->id, 'viewinwallet', 'btn-outline-primary');
+        } else {
+            $action = html_writer::span('—', 'text-muted');
+        }
+
+        $table->data[] = [$coursename, $statuslabel, $action];
+    }
+
+    echo html_writer::table($table);
+}
+
+echo $OUTPUT->footer();

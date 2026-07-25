@@ -1,13 +1,13 @@
 # Credentium® Integration for Moodle
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 **Author:** CloudTeam Sp. z o.o.
 **License:** GNU GPL v3 or later (Plugin is FREE)
 **Moodle Compatibility:** 4.5+ and 5.0
 
 ## About
 
-The Credentium® Integration plugin automatically issues digital microcredentials to students upon course completion through the Credentium® platform.
+The Credentium® Integration plugin automatically issues digital microcredentials to students upon course completion through the Credentium® platform — and, since v3.0.0, also tracks whether each issued credential has been **claimed**, reminding learners (notification, user-menu entry, dismissible banner) about anything still waiting in their Credentium® Wallet. The formerly separate *Credentium® Claim* plugin (`local_credentiumclaim`) is absorbed into this one; see the upgrade notes in `CHANGELOG.md`.
 
 **⚠️ IMPORTANT: Credentium® is a PAID SaaS Service**
 
@@ -35,6 +35,14 @@ This plugin is **free and open source**, but it requires an active **paid subscr
 - **Operational Controls**: Pause credential issuance per category without affecting others
 - **API Key Encryption**: All API keys encrypted at rest using Moodle's encryption API
 - **Feature Flag**: Category mode can be enabled/disabled globally for gradual rollout
+
+### Claim Reminders (v3.0)
+- **Status Sync**: A scheduled task (default: every 15 minutes, interval configurable from 5 minutes to 4 hours) batch-polls the Credentium® v2 API for the claim status of every issued credential
+- **Three Reminder Surfaces**: A one-time bell/email notification the moment a credential becomes claimable, a persistent **My credentials (N)** entry in the user menu and profile, and a dismissible top-of-page banner
+- **One-Click Claiming**: "Claim" mints a single-use claim link through the API and opens the learner's Credentium® Wallet in a new tab; the link is never rendered into a page or written to a log
+- **Wallet Access After Claiming**: Claimed credentials stay listed with a "View in wallet" action, so the page is a record of what a learner earned
+- **Shared API Connection**: The claim feature reuses this plugin's API URL/key (including per-category credentials in category mode); the key additionally needs the `credentials:read` scope, which **Test connection** verifies explicitly
+- **Operational Report**: Site administration > Reports > *Credentium® Claim status* shows the status breakdown, task diagnostics, per-cause failure advice, and a "Check status now" button
 
 ### GDPR Compliance
 - **Automated Data Cleanup**: Scheduled task runs daily at 2:00 AM to delete records older than configured retention period (default: 365 days)

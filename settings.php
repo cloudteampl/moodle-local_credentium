@@ -36,12 +36,18 @@ if ($hassiteconfig) {
     // Add the settings page to the 'Local plugins' category.
     $ADMIN->add('localplugins', $settings);
 
-    // Also add the report page to the admin tree.
+    // Also add the report pages to the admin tree.
     if (isset($ADMIN)) {
         $ADMIN->add('reports', new admin_externalpage(
             'local_credentium_report',
             get_string('report', 'local_credentium'),
             new moodle_url('/local/credentium/index.php'),
+            'local/credentium:viewreports'
+        ));
+        $ADMIN->add('reports', new admin_externalpage(
+            'local_credentium_claimreport',
+            get_string('claimreport', 'local_credentium'),
+            new moodle_url('/local/credentium/claimreport.php'),
             'local/credentium:viewreports'
         ));
     }
