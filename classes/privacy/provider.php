@@ -43,7 +43,6 @@ class provider implements
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\request\plugin\provider {
-    
     /**
      * Return the fields which contain personal data.
      *
@@ -97,7 +96,7 @@ class provider implements
 
         return $collection;
     }
-    
+
     /**
      * Get the list of contexts that contain user information for the specified user.
      *
@@ -106,27 +105,27 @@ class provider implements
      */
     public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
-        
+
         // Add course contexts where user has credential issuances.
         $sql = "SELECT DISTINCT ctx.id
                   FROM {context} ctx
                   JOIN {local_credentium_issuances} lci ON lci.courseid = ctx.instanceid
                  WHERE ctx.contextlevel = :contextlevel
                    AND lci.userid = :userid";
-        
+
         $params = [
             'contextlevel' => CONTEXT_COURSE,
             'userid' => $userid,
         ];
-        
+
         $contextlist->add_from_sql($sql, $params);
-        
+
         // Also add user context.
         $contextlist->add_user_context($userid);
-        
+
         return $contextlist;
     }
-    
+
     /**
      * Get the list of users who have data within a context.
      *
@@ -158,7 +157,7 @@ class provider implements
             );
         }
     }
-    
+
     /**
      * Export personal data for the given approved_contextlist.
      *
@@ -166,13 +165,13 @@ class provider implements
      */
     public static function export_user_data(approved_contextlist $contextlist) {
         global $DB;
-        
+
         if (empty($contextlist->count())) {
             return;
         }
-        
+
         $userid = $contextlist->get_user()->id;
-        
+
         // Process each context.
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel == CONTEXT_COURSE) {
@@ -183,14 +182,14 @@ class provider implements
                          WHERE lci.userid = :userid
                            AND lci.courseid = :courseid
                       ORDER BY lci.timecreated";
-                
+
                 $params = [
                     'userid' => $userid,
                     'courseid' => $context->instanceid,
                 ];
-                
+
                 $issuances = $DB->get_records_sql($sql, $params);
-                
+
                 if ($issuances) {
                     $data = [];
                     foreach ($issuances as $issuance) {
@@ -203,7 +202,7 @@ class provider implements
                             'timeissued' => $issuance->timeissued ? transform::datetime($issuance->timeissued) : '',
                         ];
                     }
-                    
+
                     writer::with_context($context)->export_data(
                         [get_string('pluginname', 'local_credentium'), get_string('issuancehistory', 'local_credentium')],
                         (object)['issuances' => $data]
@@ -217,10 +216,10 @@ class provider implements
                      LEFT JOIN {course} c ON c.id = lci.courseid
                          WHERE lci.userid = :userid
                       ORDER BY lci.timecreated";
-                
+
                 $params = ['userid' => $userid];
                 $issuances = $DB->get_records_sql($sql, $params);
-                
+
                 if ($issuances) {
                     $data = [];
                     foreach ($issuances as $issuance) {
@@ -234,7 +233,7 @@ class provider implements
                             'timeissued' => $issuance->timeissued ? transform::datetime($issuance->timeissued) : '',
                         ];
                     }
-                    
+
                     writer::with_context($context)->export_data(
                         [get_string('pluginname', 'local_credentium'), get_string('issuancehistory', 'local_credentium')],
                         (object)['issuances' => $data]
@@ -267,7 +266,7 @@ class provider implements
             }
         }
     }
-    
+
     /**
      * Delete all data for all users in the specified context.
      *
@@ -288,7 +287,7 @@ class provider implements
             \local_credentium\local\claimable::purge_cache((int) $context->instanceid);
         }
     }
-    
+
     /**
      * Delete all user data for the specified user, in the specified contexts.
      *
@@ -296,13 +295,13 @@ class provider implements
      */
     public static function delete_data_for_user(approved_contextlist $contextlist) {
         global $DB;
-        
+
         if (empty($contextlist->count())) {
             return;
         }
-        
+
         $userid = $contextlist->get_user()->id;
-        
+
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel == CONTEXT_COURSE) {
                 // Delete credential issuances for this user in this course.
@@ -318,7 +317,7 @@ class provider implements
             }
         }
     }
-    
+
     /**
      * Delete multiple users within a single context.
      *
@@ -326,17 +325,20 @@ class provider implements
      */
     public static function delete_data_for_users(approved_userlist $userlist) {
         global $DB;
-        
+
         $context = $userlist->get_context();
-        
+
         if ($context->contextlevel == CONTEXT_COURSE) {
             $userids = $userlist->get_userids();
             if (!empty($userids)) {
-                list($insql, $params) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+                [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
                 $params['courseid'] = $context->instanceid;
 
-                $DB->delete_records_select('local_credentium_issuances',
-                    "userid $insql AND courseid = :courseid", $params);
+                $DB->delete_records_select(
+                    'local_credentium_issuances',
+                    "userid $insql AND courseid = :courseid",
+                    $params
+                );
             }
         } else if ($context->contextlevel == CONTEXT_USER) {
             // A user context belongs to exactly one user; act only when they are listed.

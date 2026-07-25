@@ -30,7 +30,6 @@ defined('MOODLE_INTERNAL') || die();
  * Scheduled task to process pending credentials.
  */
 class process_pending_credentials extends \core\task\scheduled_task {
-    
     /**
      * Get the name of the task.
      *
@@ -39,44 +38,45 @@ class process_pending_credentials extends \core\task\scheduled_task {
     public function get_name() {
         return get_string('task:processpending', 'local_credentium');
     }
-    
+
     /**
      * Execute the task.
      */
     public function execute() {
         global $DB;
-        
+
         if (!get_config('local_credentium', 'enabled')) {
             mtrace('Credentium integration is disabled.');
             return;
         }
-        
+
         // Get pending credentials (limit to prevent timeout)
         // Only fetch required columns for better performance
-        $pendingissuances = $DB->get_records('local_credentium_issuances', 
-            ['status' => 'pending'], 
-            'timecreated ASC', 
-            'id, userid, courseid', 
-            0, 
+        $pendingissuances = $DB->get_records(
+            'local_credentium_issuances',
+            ['status' => 'pending'],
+            'timecreated ASC',
+            'id, userid, courseid',
+            0,
             50
         );
-        
+
         if (empty($pendingissuances)) {
             mtrace('No pending credentials to process.');
             return;
         }
-        
+
         mtrace('Processing ' . count($pendingissuances) . ' pending credential(s)...');
-        
+
         foreach ($pendingissuances as $issuance) {
             // Queue an ad-hoc task for each pending credential
             $task = new issue_credential();
             $task->set_custom_data(['issuanceid' => $issuance->id]);
             \core\task\manager::queue_adhoc_task($task);
-            
+
             mtrace("Queued credential issuance for user {$issuance->userid} in course {$issuance->courseid}");
         }
-        
+
         mtrace('Finished queueing pending credentials.');
     }
 }

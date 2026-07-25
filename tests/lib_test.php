@@ -39,7 +39,6 @@ require_once($CFG->dirroot . '/local/credentium/lib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class lib_test extends \advanced_testcase {
-
     /**
      * Test encryption and decryption of API keys.
      */

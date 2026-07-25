@@ -34,7 +34,6 @@ defined('MOODLE_INTERNAL') || die();
  * data minimization and storage limitation principles.
  */
 class cleanup_old_issuances extends \core\task\scheduled_task {
-
     /**
      * Get a descriptive name for this task (shown to admins).
      *
@@ -70,7 +69,8 @@ class cleanup_old_issuances extends \core\task\scheduled_task {
         mtrace("Retention period: " . format_time($retentionperiod));
 
         // Count records to be deleted (for logging).
-        $count = $DB->count_records_select('local_credentium_issuances',
+        $count = $DB->count_records_select(
+            'local_credentium_issuances',
             'timecreated < :cutoff',
             ['cutoff' => $cutofftime]
         );
@@ -83,7 +83,8 @@ class cleanup_old_issuances extends \core\task\scheduled_task {
         mtrace("Found {$count} issuance record(s) to delete.");
 
         // Delete old records.
-        $deleted = $DB->delete_records_select('local_credentium_issuances',
+        $deleted = $DB->delete_records_select(
+            'local_credentium_issuances',
             'timecreated < :cutoff',
             ['cutoff' => $cutofftime]
         );

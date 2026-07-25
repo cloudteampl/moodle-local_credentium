@@ -34,11 +34,11 @@ function xmldb_local_credentium_upgrade($oldversion) {
     global $CFG, $DB;
 
     $dbman = $DB->get_manager();
-    
+
     if ($oldversion < 2025012900) {
         upgrade_plugin_savepoint(true, 2025012900, 'local', 'credentium');
     }
-    
+
     if ($oldversion < 2025012935) {
         // Force refresh of scheduled tasks to register new task
         // Only reset tasks for our specific component to prevent any potential issues
@@ -47,36 +47,36 @@ function xmldb_local_credentium_upgrade($oldversion) {
         if ($component === 'local_credentium' && core_component::is_valid_plugin_name('local', 'credentium')) {
             \core\task\manager::reset_scheduled_tasks_for_component($component);
         }
-        
+
         upgrade_plugin_savepoint(true, 2025012935, 'local', 'credentium');
     }
-    
+
     if ($oldversion < 2025012944) {
         // Fix database schema for templates cache table
         $table = new xmldb_table('local_credentium_templates_cache');
-        
+
         // Rename metadata field to data
         $oldfield = new xmldb_field('metadata', XMLDB_TYPE_TEXT, null, null, null, null, null, 'description');
         $newfield = new xmldb_field('data', XMLDB_TYPE_TEXT, null, null, null, null, null, 'description');
         if ($dbman->field_exists($table, $oldfield)) {
             $dbman->rename_field($table, $oldfield, 'data');
         }
-        
+
         // Rename timecreated field to timecached
         $oldfield2 = new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'active');
         if ($dbman->field_exists($table, $oldfield2)) {
             $dbman->rename_field($table, $oldfield2, 'timecached');
         }
-        
+
         // Drop timemodified field if it exists
         $dropfield = new xmldb_field('timemodified');
         if ($dbman->field_exists($table, $dropfield)) {
             $dbman->drop_field($table, $dropfield);
         }
-        
+
         upgrade_plugin_savepoint(true, 2025012944, 'local', 'credentium');
     }
-    
+
     if ($oldversion < 2025073135) {
         // Add sendgrade field to course config table
         $table = new xmldb_table('local_credentium_course_config');
@@ -233,8 +233,12 @@ function xmldb_local_credentium_upgrade($oldversion) {
         if ($dbman->table_exists('local_credentiumclaim_status')) {
             $rs = $DB->get_recordset('local_credentiumclaim_status');
             foreach ($rs as $old) {
-                if ($DB->record_exists('local_credentium_claims',
-                        ['userid' => $old->userid, 'credentialkey' => $old->credentialkey])) {
+                if (
+                    $DB->record_exists(
+                        'local_credentium_claims',
+                        ['userid' => $old->userid, 'credentialkey' => $old->credentialkey]
+                    )
+                ) {
                     continue;
                 }
                 unset($old->id);

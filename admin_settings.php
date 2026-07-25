@@ -41,15 +41,18 @@ $PAGE->set_heading(get_string('globalsettings', 'local_credentium'));
  * Global settings form.
  */
 class local_credentium_admin_settings_form extends moodleform {
-
     public function definition() {
         $mform = $this->_form;
 
         // Introduction text.
-        $mform->addElement('static', 'intro', '',
+        $mform->addElement(
+            'static',
+            'intro',
+            '',
             '<div class="alert alert-info">' .
             get_string('settings_desc', 'local_credentium') .
-            '</div>');
+            '</div>'
+        );
 
         // Enable/disable plugin.
         $mform->addElement('checkbox', 'enabled', get_string('enabled', 'local_credentium'));
@@ -61,11 +64,15 @@ class local_credentium_admin_settings_form extends moodleform {
         $mform->hideIf('categorymode', 'enabled', 'notchecked');
 
         // Show informative message about category mode (always add, but hide if not enabled).
-        $mform->addElement('static', 'categorymode_info', '',
+        $mform->addElement(
+            'static',
+            'categorymode_info',
+            '',
             '<div class="alert alert-warning" id="categorymode_info_alert">' .
             '<strong>' . get_string('categorymode_info_heading', 'local_credentium') . '</strong><br>' .
             get_string('categorymode_info_text', 'local_credentium') .
-            '</div>');
+            '</div>'
+        );
         $mform->hideIf('categorymode_info', 'enabled', 'notchecked');
         $mform->hideIf('categorymode_info', 'categorymode', 'notchecked');
 
@@ -90,26 +97,36 @@ class local_credentium_admin_settings_form extends moodleform {
         if ($credentials_saved) {
             $testurl = new moodle_url('/local/credentium/testconnection.php', ['sesskey' => sesskey()]);
             $onclick = "window.open('{$testurl->out(false)}', '_blank'); return false;";
-            $mform->addElement('button', 'testconnection',
+            $mform->addElement(
+                'button',
+                'testconnection',
                 get_string('testconnection', 'local_credentium'),
-                ['onclick' => $onclick]);
+                ['onclick' => $onclick]
+            );
         } else {
             // JavaScript alert when clicking disabled button.
             $alertmessage = get_string('testconnection_disabled', 'local_credentium');
             $onclick = "alert(" . json_encode($alertmessage) . "); return false;";
-            $mform->addElement('button', 'testconnection',
+            $mform->addElement(
+                'button',
+                'testconnection',
                 get_string('testconnection', 'local_credentium'),
-                ['onclick' => $onclick]);
+                ['onclick' => $onclick]
+            );
         }
         $mform->hideIf('testconnection', 'enabled', 'notchecked');
 
         // Claim reminders (absorbed from the former Credentium Claim plugin).
         $mform->addElement('header', 'claimsettings', get_string('claimsettings_heading', 'local_credentium'));
         $mform->setExpanded('claimsettings', true);
-        $mform->addElement('static', 'claimintro', '',
+        $mform->addElement(
+            'static',
+            'claimintro',
+            '',
             '<div class="alert alert-info">' .
             get_string('claimsettings_desc', 'local_credentium') .
-            '</div>');
+            '</div>'
+        );
         // The section header itself cannot be hidden via hideIf; hiding the intro
         // and every field leaves just the collapsed header while the master switch
         // is off, which is as close as moodleforms get.
@@ -151,8 +168,12 @@ class local_credentium_admin_settings_form extends moodleform {
         // Data retention (GDPR compliance).
         // Only allow days and weeks since cleanup runs daily at 2 AM.
         // Note: Moodle duration element doesn't support months or years as units.
-        $mform->addElement('duration', 'dataretention', get_string('dataretention', 'local_credentium'),
-            ['optional' => false, 'defaultunit' => DAYSECS, 'units' => [DAYSECS, WEEKSECS]]);
+        $mform->addElement(
+            'duration',
+            'dataretention',
+            get_string('dataretention', 'local_credentium'),
+            ['optional' => false, 'defaultunit' => DAYSECS, 'units' => [DAYSECS, WEEKSECS]]
+        );
         $mform->addHelpButton('dataretention', 'dataretention', 'local_credentium');
         $mform->setDefault('dataretention', 365 * DAYSECS); // Default: 365 days
         $mform->hideIf('dataretention', 'enabled', 'notchecked');

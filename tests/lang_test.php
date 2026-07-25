@@ -41,7 +41,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class lang_test extends \advanced_testcase {
-
     /** @var string[] Languages the plugin ships. English is the reference. */
     private const LANGS = ['en', 'pl'];
 
@@ -96,12 +95,18 @@ class lang_test extends \advanced_testcase {
             $translated = $this->load_strings($lang);
 
             $missing = array_diff(array_keys($reference), array_keys($translated));
-            $this->assertSame([], array_values($missing),
-                "Strings missing from the '{$lang}' language pack: " . implode(', ', $missing));
+            $this->assertSame(
+                [],
+                array_values($missing),
+                "Strings missing from the '{$lang}' language pack: " . implode(', ', $missing)
+            );
 
             $orphaned = array_diff(array_keys($translated), array_keys($reference));
-            $this->assertSame([], array_values($orphaned),
-                "Strings in '{$lang}' with no English counterpart: " . implode(', ', $orphaned));
+            $this->assertSame(
+                [],
+                array_values($orphaned),
+                "Strings in '{$lang}' with no English counterpart: " . implode(', ', $orphaned)
+            );
         }
     }
 
@@ -129,9 +134,12 @@ class lang_test extends \advanced_testcase {
                 }
             }
 
-            $this->assertSame([], $untranslated,
+            $this->assertSame(
+                [],
+                $untranslated,
                 "Untranslated strings in '{$lang}' (identical to English): " . implode(', ', $untranslated)
-                . '. Translate them, or add the key to lang_test::ALLOW_IDENTICAL if the term is genuinely the same.');
+                . '. Translate them, or add the key to lang_test::ALLOW_IDENTICAL if the term is genuinely the same.'
+            );
         }
     }
 
@@ -160,8 +168,11 @@ class lang_test extends \advanced_testcase {
                 sort($expected[0]);
                 sort($actual[0]);
 
-                $this->assertSame($expected[0], $actual[0],
-                    "Placeholder mismatch for '{$key}' in '{$lang}'.");
+                $this->assertSame(
+                    $expected[0],
+                    $actual[0],
+                    "Placeholder mismatch for '{$key}' in '{$lang}'."
+                );
             }
         }
     }
@@ -184,8 +195,11 @@ class lang_test extends \advanced_testcase {
             $strings = $this->load_strings($lang);
 
             foreach (array_keys($messageproviders) as $provider) {
-                $this->assertArrayHasKey('messageprovider:' . $provider, $strings,
-                    "Message provider '{$provider}' has no label in the '{$lang}' language pack.");
+                $this->assertArrayHasKey(
+                    'messageprovider:' . $provider,
+                    $strings,
+                    "Message provider '{$provider}' has no label in the '{$lang}' language pack."
+                );
             }
         }
     }
@@ -207,8 +221,11 @@ class lang_test extends \advanced_testcase {
             foreach (array_keys($capabilities) as $capability) {
                 // 'local/credentium:manage' resolves to the 'credentium:manage' string key.
                 $key = substr($capability, strpos($capability, '/') + 1);
-                $this->assertArrayHasKey($key, $strings,
-                    "Capability '{$capability}' has no label in the '{$lang}' language pack.");
+                $this->assertArrayHasKey(
+                    $key,
+                    $strings,
+                    "Capability '{$capability}' has no label in the '{$lang}' language pack."
+                );
             }
         }
     }
@@ -230,8 +247,11 @@ class lang_test extends \advanced_testcase {
             $name = $instance->get_name();
 
             $this->assertNotEmpty($name, "Scheduled task {$task['classname']} has an empty name.");
-            $this->assertStringNotContainsString('[[', $name,
-                "Scheduled task {$task['classname']} resolves to a missing string: {$name}");
+            $this->assertStringNotContainsString(
+                '[[',
+                $name,
+                "Scheduled task {$task['classname']} resolves to a missing string: {$name}"
+            );
         }
     }
 }

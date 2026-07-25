@@ -72,7 +72,7 @@ class client {
         if ($cachedtemplates !== null) {
             return $cachedtemplates;
         }
-        
+
         // Cache miss, fetch from API
         $params = $activeonly ? ['assessmentsOnly' => 'true'] : [];
         try {
@@ -85,15 +85,15 @@ class client {
             throw $e;
         }
     }
-    
+
     public function issue_credential($templateid, $user, $course, $additionaldata = []) {
         $data = [
             'credentialTemplateId' => $templateid,
             'personEmail' => $user->email,
             'personGivenName' => $user->firstname,
-            'personFamilyName' => $user->lastname
+            'personFamilyName' => $user->lastname,
         ];
-        
+
         // Add grade only if provided
         if (isset($additionaldata['grade'])) {
             $data['grade'] = (string)$additionaldata['grade'];
@@ -183,7 +183,7 @@ class client {
             local_credentium_log("API Request Failed", [
                 'url' => parse_url($url, PHP_URL_PATH),
                 'method' => $method,
-                'http_code' => $httpcode
+                'http_code' => $httpcode,
             ]);
             mtrace("API ERROR - HTTP {$httpcode}");
             mtrace("URL: {$url}");

@@ -41,14 +41,14 @@ echo $OUTPUT->header();
 $issuance = $DB->get_record('local_credentium_issuances', ['id' => $id]);
 if (!$issuance) {
     echo $OUTPUT->notification('Issuance record not found for ID: ' . (int)$id, 'error');
-    
+
     // Show all issuance records for debugging
     $allissuances = $DB->get_records('local_credentium_issuances', null, 'id ASC', 'id, userid, courseid, status', 0, 10);
     echo html_writer::tag('p', 'Available issuance records:');
     foreach ($allissuances as $iss) {
         echo html_writer::tag('p', "ID: {$iss->id}, User: {$iss->userid}, Course: {$iss->courseid}, Status: {$iss->status}");
     }
-    
+
     echo $OUTPUT->footer();
     die();
 }
@@ -202,7 +202,6 @@ try {
     if (!$templatefound) {
         echo $OUTPUT->notification('Template ' . s($issuance->templateid) . ' NOT found in available templates!', 'error');
     }
-
 } catch (Exception $e) {
     echo $OUTPUT->notification('API Error: ' . s($e->getMessage()), 'error');
     if (isset($e->debuginfo) && !empty($e->debuginfo)) {

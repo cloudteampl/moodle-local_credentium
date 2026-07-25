@@ -38,48 +38,53 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('processingcredentials', 'local_credentium'), 3);
 
 // Get all pending and retrying credentials
-$pendingissuances = $DB->get_records_select('local_credentium_issuances', 
-    "status IN ('pending', 'retrying')", 
-    null, 
-    'timecreated ASC', 
-    '*', 
-    0, 
-    10);
+$pendingissuances = $DB->get_records_select(
+    'local_credentium_issuances',
+    "status IN ('pending', 'retrying')",
+    null,
+    'timecreated ASC',
+    '*',
+    0,
+    10
+);
 
 if (empty($pendingissuances)) {
     echo $OUTPUT->notification(get_string('nopendingcredentials', 'local_credentium'), 'info');
 } else {
     echo html_writer::tag('p', get_string('processingcount', 'local_credentium', count($pendingissuances)));
-    
+
     // Queue ad-hoc tasks for each pending issuance
     $queuedcount = 0;
     foreach ($pendingissuances as $issuance) {
         $user = $DB->get_record('user', ['id' => $issuance->userid]);
         $course = $DB->get_record('course', ['id' => $issuance->courseid]);
-        
+
         echo html_writer::start_div('alert alert-info');
         echo "Queuing credential for " . fullname($user) . " in course " . $course->fullname . "... ";
-        
+
         // Show previous error if retrying
         if ($issuance->status === 'retrying' && !empty($issuance->errormessage)) {
             echo html_writer::tag('small', ' (Previous error: ' . $issuance->errormessage . ')', ['class' => 'text-muted']);
         }
         flush();
-        
+
         // Queue an ad-hoc task for this credential
         $task = new \local_credentium\task\issue_credential();
         $task->set_custom_data(['issuanceid' => $issuance->id]);
         \core\task\manager::queue_adhoc_task($task);
-        
+
         echo html_writer::tag('strong', 'QUEUED', ['class' => 'text-success']);
         $queuedcount++;
-        
+
         echo html_writer::end_div();
         flush();
     }
-    
-    echo html_writer::tag('p', get_string('bulkissuanceinitiated', 'local_credentium', $queuedcount), 
-        ['class' => 'alert alert-success mt-3']);
+
+    echo html_writer::tag(
+        'p',
+        get_string('bulkissuanceinitiated', 'local_credentium', $queuedcount),
+        ['class' => 'alert alert-success mt-3']
+    );
 }
 
 echo html_writer::tag('p', html_writer::link(

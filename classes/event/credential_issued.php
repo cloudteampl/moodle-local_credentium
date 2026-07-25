@@ -30,7 +30,6 @@ defined('MOODLE_INTERNAL') || die();
  * Event triggered when a credential is successfully issued.
  */
 class credential_issued extends \core\event\base {
-    
     /**
      * Init method.
      */
@@ -39,7 +38,7 @@ class credential_issued extends \core\event\base {
         $this->data['edulevel'] = self::LEVEL_OTHER;
         $this->data['objecttable'] = 'local_credentium_issuances';
     }
-    
+
     /**
      * Returns localised event name.
      *
@@ -48,7 +47,7 @@ class credential_issued extends \core\event\base {
     public static function get_name() {
         return get_string('eventcredentialissued', 'local_credentium');
     }
-    
+
     /**
      * Returns non-localised event description with id's for admin use only.
      *
@@ -58,17 +57,19 @@ class credential_issued extends \core\event\base {
         return "The user with id '$this->userid' was issued a credential with id '{$this->other['credentialid']}' " .
                "for course with id '$this->courseid'.";
     }
-    
+
     /**
      * Get URL related to the action.
      *
      * @return \moodle_url
      */
     public function get_url() {
-        return new \moodle_url('/local/credentium/index.php', 
-            ['action' => 'view', 'id' => $this->objectid]);
+        return new \moodle_url(
+            '/local/credentium/index.php',
+            ['action' => 'view', 'id' => $this->objectid]
+        );
     }
-    
+
     /**
      * Custom validation.
      *
@@ -76,16 +77,16 @@ class credential_issued extends \core\event\base {
      */
     protected function validate_data() {
         parent::validate_data();
-        
+
         if (!isset($this->other['credentialid'])) {
             throw new \coding_exception('The \'credentialid\' value must be set in other.');
         }
-        
+
         if (!isset($this->other['templateid'])) {
             throw new \coding_exception('The \'templateid\' value must be set in other.');
         }
     }
-    
+
     /**
      * Create instance of event.
      *
@@ -104,10 +105,10 @@ class credential_issued extends \core\event\base {
                 'templateid' => $issuance->templateid,
             ],
         ];
-        
+
         return self::create($data);
     }
-    
+
     /**
      * Get objectid mapping.
      *
@@ -116,7 +117,7 @@ class credential_issued extends \core\event\base {
     public static function get_objectid_mapping() {
         return ['db' => 'local_credentium_issuances', 'restore' => 'local_credentium_issuance'];
     }
-    
+
     /**
      * Get other mapping.
      *
@@ -126,7 +127,7 @@ class credential_issued extends \core\event\base {
         $othermapped = [];
         $othermapped['credentialid'] = ['db' => 'local_credentium_issuances', 'restore' => \core\event\base::NOT_MAPPED];
         $othermapped['templateid'] = ['db' => 'local_credentium_templates_cache', 'restore' => \core\event\base::NOT_MAPPED];
-        
+
         return $othermapped;
     }
 }

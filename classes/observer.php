@@ -27,7 +27,6 @@ namespace local_credentium;
 defined('MOODLE_INTERNAL') || die();
 
 class observer {
-    
     public static function course_completed(\core\event\course_completed $event) {
         global $DB, $CFG;
 
@@ -57,7 +56,7 @@ class observer {
         if (!empty($config->paused)) {
             local_credentium_log('Issuance skipped - category is paused', [
                 'courseid' => $courseid,
-                'categoryid' => $config->categoryid ?? null
+                'categoryid' => $config->categoryid ?? null,
             ]);
             return;
         }
@@ -76,14 +75,15 @@ class observer {
         if (!$lock) {
             local_credentium_log('Could not acquire lock, skipping', [
                 'courseid' => $courseid,
-                'userid' => $userid
+                'userid' => $userid,
             ]);
             return;
         }
 
         try {
             // Check for existing pending/retrying/issued record (inside lock).
-            $existing = $DB->get_record_select('local_credentium_issuances',
+            $existing = $DB->get_record_select(
+                'local_credentium_issuances',
                 'userid = :userid AND courseid = :courseid AND status IN (:s1, :s2, :s3)',
                 ['userid' => $userid, 'courseid' => $courseid,
                  's1' => 'pending', 's2' => 'retrying', 's3' => 'issued']
@@ -93,7 +93,7 @@ class observer {
                 local_credentium_log('Skipping duplicate issuance', [
                     'userid' => $userid,
                     'courseid' => $courseid,
-                    'existing_status' => $existing->status
+                    'existing_status' => $existing->status,
                 ]);
                 return;
             }
@@ -123,7 +123,7 @@ class observer {
             $task = new \local_credentium\task\issue_credential();
             $task->set_custom_data([
                 'issuanceid' => $issuance->id,
-                'categoryid' => $issuance->categoryid
+                'categoryid' => $issuance->categoryid,
             ]);
             $task->set_userid(0);  // Consistent: always run as admin/system.
             $task->set_component('local_credentium');  // Explicit component.
@@ -135,9 +135,8 @@ class observer {
                 'issuanceid' => $issuance->id,
                 'userid' => $userid,
                 'courseid' => $courseid,
-                'timecompleted' => $timecompleted
+                'timecompleted' => $timecompleted,
             ]);
-
         } finally {
             $lock->release();
         }
@@ -171,7 +170,7 @@ class observer {
             if ($deleted) {
                 local_credentium_log('User deletion: Deleted credential issuance records', [
                     'userid' => $userid,
-                    'count' => $count
+                    'count' => $count,
                 ]);
             }
         }
@@ -180,5 +179,4 @@ class observer {
         $DB->delete_records(\local_credentium\local\claimable::TABLE, ['userid' => $userid]);
         \local_credentium\local\claimable::purge_cache((int) $userid);
     }
-
 }

@@ -223,12 +223,12 @@ function local_credentium_get_category_config($categoryid) {
             'categoryid' => $categoryid,
             'has_apiurl' => !empty($config->apiurl),
             'has_apikey' => !empty($config->apikey),
-            'enabled' => $config->enabled ?? 0
+            'enabled' => $config->enabled ?? 0,
         ]);
     } else {
         local_credentium_log('get_category_config - No config or empty apikey', [
             'categoryid' => $categoryid,
-            'config_exists' => $config ? 'yes' : 'no'
+            'config_exists' => $config ? 'yes' : 'no',
         ]);
     }
 
@@ -290,7 +290,7 @@ function local_credentium_resolve_category_config($courseid) {
         local_credentium_log('resolve_category_config - Using global (category mode disabled)', [
             'courseid' => $courseid,
             'has_apiurl' => !empty($globalconfig->apiurl),
-            'has_apikey' => !empty($globalconfig->apikey)
+            'has_apikey' => !empty($globalconfig->apikey),
         ]);
 
         return $globalconfig;
@@ -332,7 +332,7 @@ function local_credentium_resolve_category_config($courseid) {
 
     local_credentium_log('resolve_category_config - Walking category tree', [
         'courseid' => $courseid,
-        'starting_category' => $category->id
+        'starting_category' => $category->id,
     ]);
 
     while ($category && $depth < $maxdepth) {
@@ -345,7 +345,7 @@ function local_credentium_resolve_category_config($courseid) {
                 local_credentium_log('resolve_category_config - Found enabled category config with custom credentials', [
                     'courseid' => $courseid,
                     'categoryid' => $category->id,
-                    'depth' => $depth
+                    'depth' => $depth,
                 ]);
                 $cache[$courseid] = $catconfig;
                 return $catconfig;
@@ -355,7 +355,7 @@ function local_credentium_resolve_category_config($courseid) {
                 local_credentium_log('resolve_category_config - Found enabled category using global credentials', [
                     'courseid' => $courseid,
                     'categoryid' => $category->id,
-                    'depth' => $depth
+                    'depth' => $depth,
                 ]);
                 $result = (object)[
                     'categoryid' => $category->id,
@@ -382,7 +382,7 @@ function local_credentium_resolve_category_config($courseid) {
     // No category config found, fall back to global
     local_credentium_log('resolve_category_config - No category config found, using global', [
         'courseid' => $courseid,
-        'depth_searched' => $depth
+        'depth_searched' => $depth,
     ]);
 
     $result = (object)[
@@ -415,7 +415,7 @@ function local_credentium_resolve_course_config($courseid) {
         local_credentium_log('resolve_course_config - Course not configured or disabled', [
             'courseid' => $courseid,
             'has_config' => $courseconfig ? 'yes' : 'no',
-            'enabled' => $courseconfig->enabled ?? 0
+            'enabled' => $courseconfig->enabled ?? 0,
         ]);
         return null; // Course not configured or explicitly disabled
     }
@@ -435,7 +435,7 @@ function local_credentium_resolve_course_config($courseid) {
         'has_apiurl' => !empty($courseconfig->apiurl),
         'has_apikey' => !empty($courseconfig->apikey),
         'categoryid' => $courseconfig->categoryid ?? 'global',
-        'paused' => $courseconfig->paused ?? 0
+        'paused' => $courseconfig->paused ?? 0,
     ]);
 
     return $courseconfig;

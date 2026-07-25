@@ -78,7 +78,7 @@ local_credentium_log('Testing connection', [
     'source' => $source,
     'categoryid' => $categoryid,
     'api_url_set' => !empty($apiurl),
-    'api_key_set' => !empty($apikey)
+    'api_key_set' => !empty($apikey),
 ]);
 
 echo $OUTPUT->box_start('generalbox boxwidthwide boxaligncenter');
@@ -145,7 +145,6 @@ try {
             'notifywarning'
         );
     }
-
 } catch (\Exception $e) {
     echo $OUTPUT->notification(get_string('connectionfailed', 'local_credentium', $e->getMessage()), 'notifyproblem');
 
