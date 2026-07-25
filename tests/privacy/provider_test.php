@@ -25,8 +25,6 @@
 
 namespace local_credentium\privacy;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Privacy provider tests class.
  *
@@ -34,13 +32,13 @@ defined('MOODLE_INTERNAL') || die();
  * @category   test
  * @copyright  2025 CloudTeam Sp. z o.o.
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_credentium\privacy\provider
  */
-class privacy_provider_test extends \core_privacy\tests\provider_testcase {
-
+final class provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Test getting the context for the user ID related to this plugin.
      */
-    public function test_get_contexts_for_userid() {
+    public function test_get_contexts_for_userid(): void {
         $this->resetAfterTest();
 
         // Create a user and course.
@@ -74,7 +72,7 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Test exporting user data.
      */
-    public function test_export_user_data() {
+    public function test_export_user_data(): void {
         $this->resetAfterTest();
 
         // Create a user and course.
@@ -114,7 +112,7 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Test deleting user data.
      */
-    public function test_delete_data_for_user() {
+    public function test_delete_data_for_user(): void {
         $this->resetAfterTest();
 
         // Create a user and course.
@@ -147,7 +145,7 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Test deleting data for all users in context.
      */
-    public function test_delete_data_for_all_users_in_context() {
+    public function test_delete_data_for_all_users_in_context(): void {
         $this->resetAfterTest();
 
         // Create users and course.

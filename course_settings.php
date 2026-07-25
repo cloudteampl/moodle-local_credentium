@@ -53,13 +53,17 @@ if (!get_config('local_credentium', 'enabled')) {
  * Course settings form.
  */
 class local_credentium_course_settings_form extends moodleform {
-    
+    /**
+     * Form definition.
+     *
+     * @return void
+     */
     public function definition() {
         global $DB;
-        
+
         $mform = $this->_form;
         $courseid = $this->_customdata['courseid'];
-        
+
         // Enable/disable for course.
         $mform->addElement('checkbox', 'enabled', get_string('courseenabled', 'local_credentium'));
         $mform->addHelpButton('enabled', 'courseenabled', 'local_credentium');
@@ -74,8 +78,12 @@ class local_credentium_course_settings_form extends moodleform {
             // Show which category configuration will be used.
             $categoryinfo = $this->get_category_info($courseid);
             if ($categoryinfo) {
-                $mform->addElement('static', 'categoryinfo', get_string('categoryinfo', 'local_credentium'),
-                    '<div class="alert alert-info">' . $categoryinfo . '</div>');
+                $mform->addElement(
+                    'static',
+                    'categoryinfo',
+                    get_string('categoryinfo', 'local_credentium'),
+                    '<div class="alert alert-info">' . $categoryinfo . '</div>'
+                );
             }
         }
 
@@ -111,39 +119,53 @@ class local_credentium_course_settings_form extends moodleform {
         $currentconfig = local_credentium_get_course_config($courseid);
         if ($currentconfig && !empty($currentconfig->templateid) && isset($unsupportedtemplates[$currentconfig->templateid])) {
             $assessmentcount = $unsupportedtemplates[$currentconfig->templateid];
-            $mform->addElement('static', 'template_warning', '',
+            $mform->addElement(
+                'static',
+                'template_warning',
+                '',
                 '<div class="alert alert-warning">' .
                 get_string('template_unsupported_warning', 'local_credentium', $assessmentcount) .
-                '</div>');
+                '</div>'
+            );
         }
 
         // Refresh templates button.
-        $refreshurl = new moodle_url('/local/credentium/course_settings.php',
-            ['id' => $courseid, 'action' => 'refreshtemplates', 'sesskey' => sesskey()]);
-        $mform->addElement('button', 'refreshtemplates', get_string('refreshtemplates', 'local_credentium'),
-            ['onclick' => "window.location.href='{$refreshurl->out(false)}'"]);
-        
+        $refreshurl = new moodle_url(
+            '/local/credentium/course_settings.php',
+            ['id' => $courseid, 'action' => 'refreshtemplates', 'sesskey' => sesskey()]
+        );
+        $mform->addElement(
+            'button',
+            'refreshtemplates',
+            get_string('refreshtemplates', 'local_credentium'),
+            ['onclick' => "window.location.href='{$refreshurl->out(false)}'"]
+        );
+
         // Send grade checkbox.
         $mform->addElement('checkbox', 'sendgrade', get_string('sendgrade', 'local_credentium'));
         $mform->addHelpButton('sendgrade', 'sendgrade', 'local_credentium');
-        $mform->setDefault('sendgrade', 1); // Default to sending grade
+        $mform->setDefault('sendgrade', 1); // Default to sending grade.
         $mform->disabledIf('sendgrade', 'enabled', 'notchecked');
-        
+
         // Important information about automatic issuance.
-        $mform->addElement('static', 'issuanceinfo', get_string('issuanceinfo', 'local_credentium'),
-            '<div class="alert alert-info">' . 
-            get_string('issuanceinfo_desc', 'local_credentium') . 
-            '</div>');
+        $mform->addElement(
+            'static',
+            'issuanceinfo',
+            get_string('issuanceinfo', 'local_credentium'),
+            '<div class="alert alert-info">' .
+            get_string('issuanceinfo_desc', 'local_credentium') .
+            '</div>'
+        );
         $mform->addHelpButton('issuanceinfo', 'issuanceinfo', 'local_credentium');
-        
+
         // Hidden elements.
         $mform->addElement('hidden', 'courseid', $courseid);
         $mform->setType('courseid', PARAM_INT);
-        
+
         // Buttons.
         $this->add_action_buttons();
     }
-    
+
     /**
      * Get category information to display.
      *
@@ -200,7 +222,14 @@ class local_credentium_course_settings_form extends moodleform {
             return [];
         }
     }
-    
+
+    /**
+     * Server-side validation.
+     *
+     * @param array $data Submitted data.
+     * @param array $files Submitted files.
+     * @return array Field name => error message map.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
@@ -244,13 +273,19 @@ if ($action === 'refreshtemplates') {
             $categoryconfig->categoryid ?? null
         );
         $client->get_templates(true); // This will refresh the cache.
-        redirect(new moodle_url('/local/credentium/course_settings.php', ['id' => $courseid]),
-            get_string('templaterefreshed', 'local_credentium'), null,
-            \core\output\notification::NOTIFY_SUCCESS);
+        redirect(
+            new moodle_url('/local/credentium/course_settings.php', ['id' => $courseid]),
+            get_string('templaterefreshed', 'local_credentium'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
     } catch (Exception $e) {
-        redirect(new moodle_url('/local/credentium/course_settings.php', ['id' => $courseid]),
-            get_string('error:issuancefailed', 'local_credentium', $e->getMessage()), null,
-            \core\output\notification::NOTIFY_ERROR);
+        redirect(
+            new moodle_url('/local/credentium/course_settings.php', ['id' => $courseid]),
+            get_string('error:issuancefailed', 'local_credentium', $e->getMessage()),
+            null,
+            \core\output\notification::NOTIFY_ERROR
+        );
     }
 }
 
@@ -263,7 +298,7 @@ $config = local_credentium_get_course_config($courseid);
 if ($config) {
     local_credentium_log('Loading existing course config', ['courseid' => $courseid]);
 
-    // Ensure templateid is properly set for form
+    // Ensure templateid is properly set for form.
     $formdata = (array)$config;
     if (!empty($formdata['templateid'])) {
         $formdata['templateid'] = (string)$formdata['templateid'];
@@ -280,13 +315,13 @@ if ($mform->is_cancelled()) {
 
     // Prepare config object.
     $config = new stdClass();
-    $config->courseid = $data->courseid ?? $courseid; // Use form data courseid, fallback to URL param
+    $config->courseid = $data->courseid ?? $courseid; // Use form data courseid, fallback to URL param.
     $config->enabled = !empty($data->enabled) ? 1 : 0;
     $config->templateid = !empty($data->templateid) ? $data->templateid : null;
     $config->sendgrade = !empty($data->sendgrade) ? 1 : 0;
-    $config->mingrade = null; // Not used anymore, but kept for DB compatibility
-    $config->issuancetrigger = 'completion'; // Always use completion trigger
-    $config->inherit_category = isset($data->inherit_category) ? (int)$data->inherit_category : 1; // Default to 1
+    $config->mingrade = null; // Not used anymore, but kept for DB compatibility.
+    $config->issuancetrigger = 'completion'; // Always use completion trigger.
+    $config->inherit_category = isset($data->inherit_category) ? (int)$data->inherit_category : 1; // Default to 1.
 
     // Save config.
     $success = local_credentium_save_course_config($config);
@@ -294,13 +329,16 @@ if ($mform->is_cancelled()) {
     local_credentium_log('Course config saved', [
         'courseid' => $courseid,
         'success' => $success,
-        'enabled' => $config->enabled
+        'enabled' => $config->enabled,
     ]);
 
     // Redirect with success message.
-    redirect(new moodle_url('/course/view.php', ['id' => $courseid]),
-        get_string('changessaved'), null,
-        \core\output\notification::NOTIFY_SUCCESS);
+    redirect(
+        new moodle_url('/course/view.php', ['id' => $courseid]),
+        get_string('changessaved'),
+        null,
+        \core\output\notification::NOTIFY_SUCCESS
+    );
 }
 
 // Output page.

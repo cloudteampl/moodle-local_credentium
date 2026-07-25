@@ -24,13 +24,10 @@
 
 namespace local_credentium\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Adhoc task to issue a credential.
  */
 class issue_credential extends \core\task\adhoc_task {
-
     /** @var array Backoff delays for grade retry: 15s → 60s → 180s → 600s → 1800s (cap at 30min). */
     private const GRADE_RETRY_DELAYS = [15, 60, 180, 600, 1800];
 
@@ -81,7 +78,7 @@ class issue_credential extends \core\task\adhoc_task {
             return;
         }
 
-        // Get resolved course config with category inheritance
+        // Get resolved course config with category inheritance.
         mtrace("Resolving course configuration for course {$course->id}...");
         $courseconfig = local_credentium_resolve_course_config($course->id);
         if (!$courseconfig) {
@@ -98,27 +95,27 @@ class issue_credential extends \core\task\adhoc_task {
         mtrace("  - Category ID: " . ($courseconfig->categoryid ?? 'global'));
         mtrace("  - Paused: " . ($courseconfig->paused ?? 0));
 
-        // Check if category is paused
+        // Check if category is paused.
         if (!empty($courseconfig->paused)) {
             mtrace("Issuance paused for category {$courseconfig->categoryid}. Rescheduling in 1 hour.");
             $task = new issue_credential();
             $task->set_custom_data([
                 'issuanceid' => $issuance->id,
-                'categoryid' => $issuance->categoryid
+                'categoryid' => $issuance->categoryid,
             ]);
             $task->set_next_run_time(time() + 3600);
             \core\task\manager::queue_adhoc_task($task);
             return;
         }
 
-        // Check rate limit
+        // Check rate limit.
         if (!empty($courseconfig->ratelimit)) {
             if (!$this->check_rate_limit($courseconfig->categoryid, $courseconfig->ratelimit)) {
                 mtrace("Rate limit exceeded for category {$courseconfig->categoryid}. Rescheduling in 10 minutes.");
                 $task = new issue_credential();
                 $task->set_custom_data([
                     'issuanceid' => $issuance->id,
-                    'categoryid' => $issuance->categoryid
+                    'categoryid' => $issuance->categoryid,
                 ]);
                 $task->set_next_run_time(time() + 600);
                 \core\task\manager::queue_adhoc_task($task);
@@ -177,13 +174,17 @@ class issue_credential extends \core\task\adhoc_task {
                 } else {
                     // Max attempts exceeded.
                     $totalwait = $this->calculate_total_wait($issuance->attempts);
-                    $this->mark_failed($issuance, 'GRADE_TIMEOUT',
+                    $this->mark_failed(
+                        $issuance,
+                        'GRADE_TIMEOUT',
                         "Grade not ready after {$issuance->attempts} attempts (~{$totalwait}s / " .
                         round($totalwait / 60) . " min wait). " .
                         "Reason: {$gradecheck['reason']}, " .
                         "Grade timemodified: {$gradecheck['timemodified']}, completion: {$timecompleted}, " .
                         "needsupdate: " . ($gradecheck['needsupdate'] ? 'true' : 'false'),
-                        $user, $course);
+                        $user,
+                        $course
+                    );
                     return;
                 }
             }
@@ -207,8 +208,10 @@ class issue_credential extends \core\task\adhoc_task {
             // - gradepass may not be set on the course
             // - The completion criteria already determined the user "passed" the course
             // This is informational only; the credential will still be issued.
-            if ($gradecheck['gradepass'] !== null && $gradecheck['gradepass'] > 0 &&
-                $gradecheck['grade'] < $gradecheck['gradepass']) {
+            if (
+                $gradecheck['gradepass'] !== null && $gradecheck['gradepass'] > 0 &&
+                $gradecheck['grade'] < $gradecheck['gradepass']
+            ) {
                 mtrace("WARNING: Grade {$gradecheck['grade']} is below gradepass {$gradecheck['gradepass']}. " .
                        "Issuing credential anyway (course completion criteria may not require grade threshold).");
             }
@@ -220,7 +223,7 @@ class issue_credential extends \core\task\adhoc_task {
         $DB->update_record('local_credentium_issuances', $issuance);
 
         try {
-            // Initialize API client with category-specific credentials
+            // Initialize API client with category-specific credentials.
             mtrace("Initializing API client...");
             $client = new \local_credentium\api\client(
                 $courseconfig->apiurl ?? null,
@@ -228,20 +231,20 @@ class issue_credential extends \core\task\adhoc_task {
                 $courseconfig->categoryid ?? null
             );
             mtrace("API client initialized successfully.");
-            
+
             // Prepare additional data.
             $additionaldata = [];
 
-            // Check if we should send grade
+            // Check if we should send grade.
             if ($courseconfig && !empty($courseconfig->sendgrade)) {
-                // Send raw grade score to Credentium API (not percentage)
+                // Send raw grade score to Credentium API (not percentage).
                 if (!is_null($issuance->grade)) {
                     $additionaldata['grade'] = (string)round($issuance->grade, 2);
                     mtrace("Sending raw grade to API: {$additionaldata['grade']}");
                 }
-                // If grade is null and sendgrade is enabled, we already handled retry above
+                // If grade is null and sendgrade is enabled, we already handled retry above.
             }
-            
+
             // Add completion date.
             $completion = new \completion_info($course);
             if ($completion->is_enabled() && $completion->is_course_complete($user->id)) {
@@ -250,11 +253,11 @@ class issue_credential extends \core\task\adhoc_task {
                     $additionaldata['completion_date'] = $ccompletion->timecompleted;
                 }
             }
-            
+
             // Issue credential.
             mtrace("Calling API to issue credential with template ID: {$issuance->templateid}");
             $response = $client->issue_credential($issuance->templateid, $user, $course, $additionaldata);
-            
+
             // Update issuance record.
             $issuance->credentialid = $response->credential_id;
             $issuance->status = 'issued';
@@ -262,17 +265,16 @@ class issue_credential extends \core\task\adhoc_task {
             $issuance->errorcode = null;
             $issuance->errormessage = null;
             $DB->update_record('local_credentium_issuances', $issuance);
-            
+
             // Trigger event.
             $context = \context_course::instance($course->id);
             $event = \local_credentium\event\credential_issued::create_from_issuance($issuance, $context);
             $event->trigger();
-            
+
             // Send notification to user.
             $this->send_notification($user, $course, true);
-            
+
             mtrace("Successfully issued credential {$response->credential_id} for user {$user->id} in course {$course->id}.");
-            
         } catch (\Exception $e) {
             $errorcode = 'API_ERROR';
             $errormessage = $e->getMessage();
@@ -283,14 +285,14 @@ class issue_credential extends \core\task\adhoc_task {
             mtrace("Error Message: {$errormessage}");
             mtrace("Error Code: {$errorcode}");
 
-            // For moodle_exception, access debuginfo as public property
+            // For moodle_exception, access debuginfo as public property.
             if ($e instanceof \moodle_exception) {
                 if (!empty($e->debuginfo)) {
                     mtrace("Debug Info:");
                     mtrace($e->debuginfo);
                 }
                 if (!empty($e->a)) {
-                    mtrace("Additional Info (a): " . (is_string($e->a) ? $e->a : print_r($e->a, true)));
+                    mtrace("Additional Info (a): " . (is_string($e->a) ? $e->a : json_encode($e->a)));
                 }
             }
 
@@ -308,7 +310,7 @@ class issue_credential extends \core\task\adhoc_task {
                         mtrace("======================");
                     }
                     if (!empty($prev->a)) {
-                        mtrace("Additional Info (a): " . (is_string($prev->a) ? $prev->a : print_r($prev->a, true)));
+                        mtrace("Additional Info (a): " . (is_string($prev->a) ? $prev->a : json_encode($prev->a)));
                     }
                 }
             } else {
@@ -316,7 +318,7 @@ class issue_credential extends \core\task\adhoc_task {
             }
 
             mtrace("==================================================");
-            
+
             // Check if we should retry.
             if ($issuance->attempts < 3) {
                 // Update status to retrying.
@@ -324,13 +326,13 @@ class issue_credential extends \core\task\adhoc_task {
                 $issuance->errorcode = $errorcode;
                 $issuance->errormessage = $errormessage;
                 $DB->update_record('local_credentium_issuances', $issuance);
-                
+
                 // Schedule retry with exponential backoff.
                 $delay = min(300 * pow(2, $issuance->attempts - 1), 3600); // Max 1 hour.
                 $task = new issue_credential();
                 $task->set_custom_data([
                     'issuanceid' => $issuance->id,
-                    'categoryid' => $issuance->categoryid
+                    'categoryid' => $issuance->categoryid,
                 ]);
                 $task->set_next_run_time(time() + $delay);
                 \core\task\manager::queue_adhoc_task($task);
@@ -342,7 +344,7 @@ class issue_credential extends \core\task\adhoc_task {
             }
         }
     }
-    
+
     /**
      * Mark issuance as failed and send notification.
      *
@@ -354,24 +356,24 @@ class issue_credential extends \core\task\adhoc_task {
      */
     private function mark_failed($issuance, $errorcode, $errormessage, $user = null, $course = null) {
         global $DB;
-        
+
         $issuance->status = 'failed';
         $issuance->errorcode = $errorcode;
         $issuance->errormessage = $errormessage;
         $issuance->timemodified = time();
         $DB->update_record('local_credentium_issuances', $issuance);
-        
+
         // Trigger event.
         $context = \context_course::instance($issuance->courseid);
         $event = \local_credentium\event\credential_failed::create_from_issuance($issuance, $context, $errormessage);
         $event->trigger();
-        
-        // Send notification after the event is triggered and state is persisted
+
+        // Send notification after the event is triggered and state is persisted.
         if ($user && $course) {
             $this->send_notification($user, $course, false);
         }
     }
-    
+
     /**
      * Send notification to user about credential issuance.
      *
@@ -437,7 +439,7 @@ class issue_credential extends \core\task\adhoc_task {
                       AND timeissued >= :onehourago";
             $count = $DB->count_records_sql($sql, [
                 'categoryid' => $categoryid,
-                'onehourago' => $onehourago
+                'onehourago' => $onehourago,
             ]);
         }
 
@@ -509,13 +511,13 @@ class issue_credential extends \core\task\adhoc_task {
                 'timemodified' => null,
                 'gradepass' => null,
                 'needsupdate' => false,
-                'reason' => 'NO_GRADE_ITEM'
+                'reason' => 'NO_GRADE_ITEM',
             ];
         }
 
         $graderecord = $DB->get_record('grade_grades', [
             'userid' => $userid,
-            'itemid' => $gradeitem->id
+            'itemid' => $gradeitem->id,
         ]);
 
         // Case 1: No grade record or null finalgrade.
@@ -527,7 +529,7 @@ class issue_credential extends \core\task\adhoc_task {
                 'timemodified' => null,
                 'gradepass' => $gradeitem->gradepass,
                 'needsupdate' => (bool)$gradeitem->needsupdate,
-                'reason' => 'NO_GRADE'
+                'reason' => 'NO_GRADE',
             ];
         }
 
@@ -548,7 +550,7 @@ class issue_credential extends \core\task\adhoc_task {
                 'timemodified' => $graderecord->timemodified,
                 'gradepass' => $gradeitem->gradepass,
                 'needsupdate' => $needsupdate,
-                'reason' => 'TIMEMODIFIED_FRESH'
+                'reason' => 'TIMEMODIFIED_FRESH',
             ];
         }
 
@@ -563,7 +565,7 @@ class issue_credential extends \core\task\adhoc_task {
                 'timemodified' => $graderecord->timemodified,
                 'gradepass' => $gradeitem->gradepass,
                 'needsupdate' => $needsupdate,
-                'reason' => 'GRADEBOOK_SETTLED'
+                'reason' => 'GRADEBOOK_SETTLED',
             ];
         }
 
@@ -576,7 +578,7 @@ class issue_credential extends \core\task\adhoc_task {
             'timemodified' => $graderecord->timemodified,
             'gradepass' => $gradeitem->gradepass,
             'needsupdate' => $needsupdate,
-            'reason' => $reason
+            'reason' => $reason,
         ];
     }
 
@@ -623,7 +625,7 @@ class issue_credential extends \core\task\adhoc_task {
         $task = new \local_credentium\task\issue_credential();
         $task->set_custom_data([
             'issuanceid' => $issuance->id,
-            'categoryid' => $issuance->categoryid
+            'categoryid' => $issuance->categoryid,
         ]);
         $task->set_userid(0);  // Must match observer.
         $task->set_component('local_credentium');  // Must match observer.

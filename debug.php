@@ -37,23 +37,23 @@ $PAGE->set_heading('Debug Credential Issuance');
 
 echo $OUTPUT->header();
 
-// Get the issuance record
+// Get the issuance record.
 $issuance = $DB->get_record('local_credentium_issuances', ['id' => $id]);
 if (!$issuance) {
     echo $OUTPUT->notification('Issuance record not found for ID: ' . (int)$id, 'error');
-    
-    // Show all issuance records for debugging
+
+    // Show all issuance records for debugging.
     $allissuances = $DB->get_records('local_credentium_issuances', null, 'id ASC', 'id, userid, courseid, status', 0, 10);
     echo html_writer::tag('p', 'Available issuance records:');
     foreach ($allissuances as $iss) {
         echo html_writer::tag('p', "ID: {$iss->id}, User: {$iss->userid}, Course: {$iss->courseid}, Status: {$iss->status}");
     }
-    
+
     echo $OUTPUT->footer();
     die();
 }
 
-// Get related records
+// Get related records.
 $user = $DB->get_record('user', ['id' => $issuance->userid]);
 $course = $DB->get_record('course', ['id' => $issuance->courseid]);
 $courseconfig = $DB->get_record('local_credentium_course_config', ['courseid' => $issuance->courseid]);
@@ -77,7 +77,7 @@ $table->data = [
 ];
 echo html_writer::table($table);
 
-// Course configuration
+// Course configuration.
 echo html_writer::tag('h3', 'Course Configuration', ['class' => 'mt-4']);
 if ($courseconfig) {
     $table = new html_table();
@@ -92,52 +92,55 @@ if ($courseconfig) {
     echo $OUTPUT->notification('No course configuration found', 'warning');
 }
 
-// Execute Task Section - Same detailed output as process_single.php
+// Execute Task Section - Same detailed output as process_single.php.
 $action = optional_param('action', '', PARAM_ALPHA);
 
 if ($action === 'execute' && confirm_sesskey()) {
     echo html_writer::tag('h3', 'Task Execution', ['class' => 'mt-4']);
 
-    // Smart retry: Refresh grade if NULL and sendgrade is enabled
+    // Smart retry: Refresh grade if NULL and sendgrade is enabled.
     require_once(__DIR__ . '/lib.php');
     $sendgrade = $courseconfig && !empty($courseconfig->sendgrade);
 
     if ($sendgrade && is_null($issuance->grade)) {
         echo html_writer::tag('p', 'Attempting to refresh grade from gradebook...');
 
-        // Attempt to fetch grade from gradebook
+        // Attempt to fetch grade from gradebook.
         require_once($CFG->libdir . '/gradelib.php');
         require_once($CFG->dirroot . '/grade/querylib.php');
-        $course_grade = \grade_get_course_grade($issuance->userid, $issuance->courseid);
+        $coursegrade = \grade_get_course_grade($issuance->userid, $issuance->courseid);
 
-        if ($course_grade && isset($course_grade->grade)) {
-            $issuance->grade = $course_grade->grade;
+        if ($coursegrade && isset($coursegrade->grade)) {
+            $issuance->grade = $coursegrade->grade;
             $issuance->timemodified = time();
             $DB->update_record('local_credentium_issuances', $issuance);
-            echo $OUTPUT->notification("Grade refreshed from gradebook: {$course_grade->grade}", 'success');
+            echo $OUTPUT->notification("Grade refreshed from gradebook: {$coursegrade->grade}", 'success');
         } else {
             echo $OUTPUT->notification('Warning: Grade still not available in gradebook', 'warning');
         }
     }
 
-    // Create and execute the task directly
+    // Create and execute the task directly.
     $task = new \local_credentium\task\issue_credential();
     $task->set_custom_data(['issuanceid' => $issuance->id]);
 
     echo html_writer::tag('p', 'Executing task for issuance ID: ' . $issuance->id);
 
-    // Capture mtrace output
+    // Capture mtrace output.
     ob_start();
 
-    // Execute the task directly
+    // Execute the task directly.
     try {
         $task->execute();
         $output = ob_get_clean();
 
         echo html_writer::tag('h4', 'Task Output', ['class' => 'mt-3']);
-        echo html_writer::tag('pre', s($output), ['class' => 'border p-3 bg-light', 'style' => 'max-height: 400px; overflow-y: auto;']);
+        echo html_writer::tag('pre', s($output), [
+            'class' => 'border p-3 bg-light',
+            'style' => 'max-height: 400px; overflow-y: auto;',
+        ]);
 
-        // Check if output contains errors to determine actual success
+        // Check if output contains errors to determine actual success.
         if (stripos($output, 'ERROR:') !== false || stripos($output, 'Error issuing') !== false) {
             echo $OUTPUT->notification('Task completed but credential issuance failed - see output above for details', 'error');
         } else if (stripos($output, 'Successfully issued credential') !== false) {
@@ -149,14 +152,20 @@ if ($action === 'execute' && confirm_sesskey()) {
         $output = ob_get_clean();
 
         echo html_writer::tag('h4', 'Task Output', ['class' => 'mt-3']);
-        echo html_writer::tag('pre', s($output), ['class' => 'border p-3 bg-light', 'style' => 'max-height: 400px; overflow-y: auto;']);
+        echo html_writer::tag('pre', s($output), [
+            'class' => 'border p-3 bg-light',
+            'style' => 'max-height: 400px; overflow-y: auto;',
+        ]);
 
         echo $OUTPUT->notification('Task execution failed with exception: ' . $e->getMessage(), 'error');
         echo html_writer::tag('h4', 'Exception Details', ['class' => 'mt-3']);
-        echo html_writer::tag('pre', s($e->getTraceAsString()), ['class' => 'border p-3 bg-light', 'style' => 'max-height: 400px; overflow-y: auto;']);
+        echo html_writer::tag('pre', s($e->getTraceAsString()), [
+            'class' => 'border p-3 bg-light',
+            'style' => 'max-height: 400px; overflow-y: auto;',
+        ]);
     }
 
-    // Reload updated issuance record
+    // Reload updated issuance record.
     $issuance = $DB->get_record('local_credentium_issuances', ['id' => $id]);
     echo html_writer::tag('h4', 'Updated Status', ['class' => 'mt-4']);
     $statustable = new html_table();
@@ -172,7 +181,7 @@ if ($action === 'execute' && confirm_sesskey()) {
     echo html_writer::tag('hr', '', ['class' => 'my-4']);
 }
 
-// Test API connection
+// Test API connection.
 echo html_writer::tag('h3', 'API Connection Test', ['class' => 'mt-4']);
 try {
     require_once(__DIR__ . '/lib.php');
@@ -185,12 +194,12 @@ try {
     );
     echo $OUTPUT->notification('API client initialized successfully', 'success');
 
-    // Try to get templates
+    // Try to get templates.
     echo html_writer::tag('p', 'Testing template fetch...');
     $templates = $client->get_templates(false);
     echo $OUTPUT->notification('Found ' . count($templates) . ' templates', 'success');
 
-    // Check if template exists
+    // Check if template exists.
     $templatefound = false;
     foreach ($templates as $template) {
         if ($template->id == $issuance->templateid) {
@@ -202,7 +211,6 @@ try {
     if (!$templatefound) {
         echo $OUTPUT->notification('Template ' . s($issuance->templateid) . ' NOT found in available templates!', 'error');
     }
-
 } catch (Exception $e) {
     echo $OUTPUT->notification('API Error: ' . s($e->getMessage()), 'error');
     if (isset($e->debuginfo) && !empty($e->debuginfo)) {
@@ -210,10 +218,10 @@ try {
     }
 }
 
-// Actions
+// Actions.
 echo html_writer::tag('h3', 'Actions', ['class' => 'mt-4']);
 
-// Execute Task Now button (shows detailed output on same page)
+// Execute Task Now button (shows detailed output on same page).
 if ($issuance->status !== 'issued') {
     echo html_writer::link(
         new moodle_url('/local/credentium/debug.php', ['id' => $issuance->id, 'action' => 'execute', 'sesskey' => sesskey()]),

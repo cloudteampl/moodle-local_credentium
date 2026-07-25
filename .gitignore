@@ -2,6 +2,9 @@
 dist/
 *.zip
 
+# Claude Code session data (worktrees, local settings)
+.claude/
+
 # IDE files
 .idea/
 .vscode/

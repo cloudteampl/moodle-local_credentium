@@ -72,22 +72,21 @@ jobs:
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phplint
 
-      # Style checkers are advisory for now: parts of the codebase predate them.
-      # Tightening them to blocking is a separate clean-up task.
+      # PHPMD stays advisory: its metric heuristics (npath, cyclomatic
+      # complexity) flag legacy-but-working code and duplicate what review
+      # already covers. phpcs and phpdoc below are blocking.
       - name: PHP Mess Detector
         continue-on-error: true
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phpmd
 
       - name: Moodle Code Checker
-        continue-on-error: true
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpcs
+        run: moodle-plugin-ci phpcs --max-warnings 0
 
       - name: Moodle PHPDoc Checker
-        continue-on-error: true
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpdoc
+        run: moodle-plugin-ci phpdoc --max-warnings 0
 
       - name: Validating
         if: ${{ !cancelled() }}

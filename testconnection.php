@@ -31,7 +31,7 @@ $categoryid = optional_param('categoryid', null, PARAM_INT);
 require_login();
 require_sesskey();
 
-// Check capabilities based on context
+// Check capabilities based on context.
 if ($categoryid) {
     $context = context_coursecat::instance($categoryid);
     require_capability('local/credentium:managecategory', $context);
@@ -50,12 +50,12 @@ $PAGE->set_heading($heading);
 
 echo $OUTPUT->header();
 
-// Clear any cached config values to ensure we get fresh data
+// Clear any cached config values to ensure we get fresh data.
 cache_helper::purge_by_definition('core', 'config');
 
-// Get API credentials based on context
+// Get API credentials based on context.
 if ($categoryid) {
-    // Get category-specific credentials
+    // Get category-specific credentials.
     $config = local_credentium_get_category_config($categoryid);
     if ($config && $config->enabled) {
         $apiurl = $config->apiurl;
@@ -67,35 +67,40 @@ if ($categoryid) {
         die();
     }
 } else {
-    // Get global credentials
+    // Get global credentials (the stored key is encrypted at rest).
     $apiurl = get_config('local_credentium', 'apiurl');
-    $apikey = get_config('local_credentium', 'apikey');
+    $apikey = local_credentium_get_global_apikey();
     $source = get_string('testconnection_global_config', 'local_credentium');
 }
 
-// Log connection test (without sensitive data)
+// Log connection test (without sensitive data).
 local_credentium_log('Testing connection', [
     'source' => $source,
     'categoryid' => $categoryid,
     'api_url_set' => !empty($apiurl),
-    'api_key_set' => !empty($apikey)
+    'api_key_set' => !empty($apikey),
 ]);
 
 echo $OUTPUT->box_start('generalbox boxwidthwide boxaligncenter');
-echo html_writer::tag('p', html_writer::tag('strong', get_string('testconnection_credentials_source', 'local_credentium') . ' ') . s($source));
+echo html_writer::tag(
+    'p',
+    html_writer::tag('strong', get_string('testconnection_credentials_source', 'local_credentium') . ' ') . s($source)
+);
 echo html_writer::tag('p', html_writer::tag('strong', get_string('testconnection_apiurl_label', 'local_credentium') . ' ') .
     (!empty($apiurl) ? s($apiurl) : html_writer::tag('em', get_string('testconnection_notconfigured', 'local_credentium'))));
 echo html_writer::tag('p', html_writer::tag('strong', get_string('testconnection_apikey_label', 'local_credentium') . ' ') .
-    (!empty($apikey) ? str_repeat('*', 20) . s(substr($apikey, -4)) : html_writer::tag('em', get_string('testconnection_notconfigured', 'local_credentium'))));
+    (!empty($apikey)
+        ? str_repeat('*', 20) . s(substr($apikey, -4))
+        : html_writer::tag('em', get_string('testconnection_notconfigured', 'local_credentium'))));
 echo $OUTPUT->box_end();
 
 try {
     echo html_writer::tag('p', get_string('testconnection_attempting', 'local_credentium'));
 
-    // Explicitly pass the fresh config values to bypass any caching
+    // Explicitly pass the fresh config values to bypass any caching.
     $client = new \local_credentium\api\client($apiurl, $apikey);
 
-    // Clear template cache to force fresh API call
+    // Clear template cache to force fresh API call.
     global $DB;
     $DB->delete_records('local_credentium_templates_cache');
 
@@ -145,7 +150,6 @@ try {
             'notifywarning'
         );
     }
-
 } catch (\Exception $e) {
     echo $OUTPUT->notification(get_string('connectionfailed', 'local_credentium', $e->getMessage()), 'notifyproblem');
 
@@ -158,7 +162,7 @@ try {
     }
 }
 
-// Back link based on context
+// Back link based on context.
 if ($categoryid) {
     $backurl = new moodle_url('/local/credentium/category_settings.php', ['id' => $categoryid]);
 } else {

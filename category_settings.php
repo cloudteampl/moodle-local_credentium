@@ -62,7 +62,11 @@ if (!get_config('local_credentium', 'categorymode')) {
  * Category settings form.
  */
 class local_credentium_category_settings_form extends moodleform {
-
+    /**
+     * Form definition.
+     *
+     * @return void
+     */
     public function definition() {
         global $DB;
 
@@ -70,45 +74,72 @@ class local_credentium_category_settings_form extends moodleform {
         $categoryid = $this->_customdata['categoryid'];
 
         // Introduction text.
-        $mform->addElement('static', 'intro', '',
+        $mform->addElement(
+            'static',
+            'intro',
+            '',
             '<div class="alert alert-info">' .
             get_string('categorysettings_desc', 'local_credentium') .
-            '</div>');
+            '</div>'
+        );
 
         // Step 1: Enable/Disable Credentium for this category.
         $mform->addElement('checkbox', 'enabled', get_string('category_enable_credentium', 'local_credentium'));
         $mform->addHelpButton('enabled', 'category_enable_credentium', 'local_credentium');
 
         // Step 2: Choose credential source (only visible when enabled).
-        $global_apiurl = get_config('local_credentium', 'apiurl');
-        $global_apikey = get_config('local_credentium', 'apikey');
-        $global_configured = !empty($global_apiurl) && !empty($global_apikey);
+        $globalapiurl = get_config('local_credentium', 'apiurl');
+        $globalapikey = get_config('local_credentium', 'apikey');
+        $globalconfigured = !empty($globalapiurl) && !empty($globalapikey);
 
         $credentialoptions = [];
-        $credentialoptions[] = $mform->createElement('radio', 'credentialsource', '',
-            get_string('credentialsource_global', 'local_credentium'), 'global');
-        $credentialoptions[] = $mform->createElement('radio', 'credentialsource', '',
-            get_string('credentialsource_custom', 'local_credentium'), 'custom');
+        $credentialoptions[] = $mform->createElement(
+            'radio',
+            'credentialsource',
+            '',
+            get_string('credentialsource_global', 'local_credentium'),
+            'global'
+        );
+        $credentialoptions[] = $mform->createElement(
+            'radio',
+            'credentialsource',
+            '',
+            get_string('credentialsource_custom', 'local_credentium'),
+            'custom'
+        );
 
-        $mform->addGroup($credentialoptions, 'credentialsource_group',
-            get_string('credentialsource', 'local_credentium'), '<br>', false);
+        $mform->addGroup(
+            $credentialoptions,
+            'credentialsource_group',
+            get_string('credentialsource', 'local_credentium'),
+            '<br>',
+            false
+        );
         $mform->addHelpButton('credentialsource_group', 'credentialsource', 'local_credentium');
         $mform->setDefault('credentialsource', 'global');
         $mform->hideIf('credentialsource_group', 'enabled', 'notchecked');
 
         // Show global credentials status (when global is selected).
-        if ($global_configured) {
-            $mform->addElement('static', 'globalcredentials_info', '',
+        if ($globalconfigured) {
+            $mform->addElement(
+                'static',
+                'globalcredentials_info',
+                '',
                 '<div class="alert alert-success">' .
                 '<strong>' . get_string('globalcredentials_available', 'local_credentium') . '</strong><br>' .
                 get_string('globalcredentials_available_desc', 'local_credentium') .
-                '</div>');
+                '</div>'
+            );
         } else {
-            $mform->addElement('static', 'globalcredentials_info', '',
+            $mform->addElement(
+                'static',
+                'globalcredentials_info',
+                '',
                 '<div class="alert alert-warning">' .
                 '<strong>' . get_string('globalcredentials_notavailable', 'local_credentium') . '</strong><br>' .
                 get_string('globalcredentials_notavailable_desc', 'local_credentium') .
-                '</div>');
+                '</div>'
+            );
         }
         $mform->hideIf('globalcredentials_info', 'enabled', 'notchecked');
         $mform->hideIf('globalcredentials_info', 'credentialsource', 'eq', 'custom');
@@ -137,22 +168,30 @@ class local_credentium_category_settings_form extends moodleform {
         $mform->hideIf('ratelimit', 'enabled', 'notchecked');
 
         // Test connection button (only for custom credentials that are saved).
-        $saved_config = local_credentium_get_category_config($categoryid);
-        $credentials_saved = !empty($saved_config) && !empty($saved_config->apiurl) && !empty($saved_config->apikey);
+        $savedconfig = local_credentium_get_category_config($categoryid);
+        $credentialssaved = !empty($savedconfig) && !empty($savedconfig->apiurl) && !empty($savedconfig->apikey);
 
-        if ($credentials_saved) {
-            $testurl = new moodle_url('/local/credentium/testconnection.php',
-                ['categoryid' => $categoryid, 'sesskey' => sesskey()]);
+        if ($credentialssaved) {
+            $testurl = new moodle_url(
+                '/local/credentium/testconnection.php',
+                ['categoryid' => $categoryid, 'sesskey' => sesskey()]
+            );
             $onclick = "window.open('{$testurl->out(false)}', '_blank'); return false;";
-            $mform->addElement('button', 'testconnection',
+            $mform->addElement(
+                'button',
+                'testconnection',
                 get_string('testconnection', 'local_credentium'),
-                ['onclick' => $onclick]);
+                ['onclick' => $onclick]
+            );
         } else {
             $alertmessage = get_string('testconnection_disabled', 'local_credentium');
             $onclick = "alert(" . json_encode($alertmessage) . "); return false;";
-            $mform->addElement('button', 'testconnection',
+            $mform->addElement(
+                'button',
+                'testconnection',
                 get_string('testconnection', 'local_credentium'),
-                ['onclick' => $onclick]);
+                ['onclick' => $onclick]
+            );
         }
         $mform->hideIf('testconnection', 'enabled', 'notchecked');
         $mform->hideIf('testconnection', 'credentialsource', 'eq', 'global');
@@ -165,26 +204,33 @@ class local_credentium_category_settings_form extends moodleform {
         $this->add_action_buttons();
     }
 
+    /**
+     * Server-side validation.
+     *
+     * @param array $data Submitted data.
+     * @param array $files Submitted files.
+     * @return array Field name => error message map.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
         if (!empty($data['enabled'])) {
-            // Only validate custom credentials if custom source is selected
+            // Only validate custom credentials if custom source is selected.
             if (!empty($data['credentialsource']) && $data['credentialsource'] === 'custom') {
-                // Validate API URL
+                // Validate API URL.
                 if (empty($data['apiurl'])) {
                     $errors['apiurl'] = get_string('required');
                 } else if (!filter_var($data['apiurl'], FILTER_VALIDATE_URL)) {
                     $errors['apiurl'] = get_string('error:invalidapiurl', 'local_credentium');
                 }
 
-                // Validate API Key
+                // Validate API Key.
                 if (empty($data['apikey'])) {
                     $errors['apikey'] = get_string('required');
                 }
             }
 
-            // Validate rate limit if provided
+            // Validate rate limit if provided.
             if (!empty($data['ratelimit']) && $data['ratelimit'] < 1) {
                 $errors['ratelimit'] = get_string('error:invalidratelimit', 'local_credentium');
             }
@@ -207,7 +253,7 @@ $config = local_credentium_get_category_config($categoryid);
 if ($config) {
     local_credentium_log('Loading existing category config', ['categoryid' => $categoryid]);
 
-    // Determine credentialsource based on whether custom credentials are configured
+    // Determine credentialsource based on whether custom credentials are configured.
     if (!empty($config->apiurl) && !empty($config->apikey)) {
         $config->credentialsource = 'custom';
     } else {
@@ -228,12 +274,12 @@ if ($mform->is_cancelled()) {
     $config->categoryid = $data->categoryid ?? $categoryid;
     $config->enabled = !empty($data->enabled) ? 1 : 0;
 
-    // Only save custom credentials if custom source is selected
+    // Only save custom credentials if custom source is selected.
     if (!empty($data->credentialsource) && $data->credentialsource === 'custom') {
         $config->apiurl = !empty($data->apiurl) ? trim($data->apiurl) : null;
         $config->apikey = !empty($data->apikey) ? $data->apikey : null;
     } else {
-        // Clear custom credentials when using global
+        // Clear custom credentials when using global.
         $config->apiurl = null;
         $config->apikey = null;
     }
@@ -247,13 +293,16 @@ if ($mform->is_cancelled()) {
     local_credentium_log('Category config saved', [
         'categoryid' => $categoryid,
         'success' => $success,
-        'enabled' => $config->enabled
+        'enabled' => $config->enabled,
     ]);
 
     // Redirect back to the same settings page with success message.
-    redirect(new moodle_url('/local/credentium/category_settings.php', ['id' => $categoryid]),
-        get_string('changessaved'), null,
-        \core\output\notification::NOTIFY_SUCCESS);
+    redirect(
+        new moodle_url('/local/credentium/category_settings.php', ['id' => $categoryid]),
+        get_string('changessaved'),
+        null,
+        \core\output\notification::NOTIFY_SUCCESS
+    );
 }
 
 // Output page.

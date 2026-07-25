@@ -24,13 +24,10 @@
 
 namespace local_credentium\event;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Event triggered when a credential issuance fails.
  */
 class credential_failed extends \core\event\base {
-    
     /**
      * Init method.
      */
@@ -39,7 +36,7 @@ class credential_failed extends \core\event\base {
         $this->data['edulevel'] = self::LEVEL_OTHER;
         $this->data['objecttable'] = 'local_credentium_issuances';
     }
-    
+
     /**
      * Returns localised event name.
      *
@@ -48,7 +45,7 @@ class credential_failed extends \core\event\base {
     public static function get_name() {
         return get_string('eventcredentialfailed', 'local_credentium');
     }
-    
+
     /**
      * Returns non-localised event description with id's for admin use only.
      *
@@ -59,17 +56,19 @@ class credential_failed extends \core\event\base {
         return "Failed to issue credential for user with id '$this->userid' " .
                "for course with id '$this->courseid'{$error}";
     }
-    
+
     /**
      * Get URL related to the action.
      *
      * @return \moodle_url
      */
     public function get_url() {
-        return new \moodle_url('/local/credentium/index.php', 
-            ['action' => 'view', 'id' => $this->objectid]);
+        return new \moodle_url(
+            '/local/credentium/index.php',
+            ['action' => 'view', 'id' => $this->objectid]
+        );
     }
-    
+
     /**
      * Custom validation.
      *
@@ -77,12 +76,12 @@ class credential_failed extends \core\event\base {
      */
     protected function validate_data() {
         parent::validate_data();
-        
+
         if (!isset($this->other['templateid'])) {
             throw new \coding_exception('The \'templateid\' value must be set in other.');
         }
     }
-    
+
     /**
      * Create instance of event.
      *
@@ -103,10 +102,10 @@ class credential_failed extends \core\event\base {
                 'error' => $error,
             ],
         ];
-        
+
         return self::create($data);
     }
-    
+
     /**
      * Get objectid mapping.
      *
@@ -115,7 +114,7 @@ class credential_failed extends \core\event\base {
     public static function get_objectid_mapping() {
         return ['db' => 'local_credentium_issuances', 'restore' => 'local_credentium_issuance'];
     }
-    
+
     /**
      * Get other mapping.
      *
@@ -124,7 +123,7 @@ class credential_failed extends \core\event\base {
     public static function get_other_mapping() {
         $othermapped = [];
         $othermapped['templateid'] = ['db' => 'local_credentium_templates_cache', 'restore' => \core\event\base::NOT_MAPPED];
-        
+
         return $othermapped;
     }
 }

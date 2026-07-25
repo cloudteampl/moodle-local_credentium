@@ -37,13 +37,21 @@ require_once($CFG->dirroot . '/local/credentium/lib.php');
  * @category   test
  * @copyright  2025 CloudTeam Sp. z o.o.
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers ::local_credentium_encrypt_key
+ * @covers ::local_credentium_decrypt_key
+ * @covers ::local_credentium_get_global_apikey
+ * @covers ::local_credentium_set_global_apikey
+ * @covers ::local_credentium_save_category_config
+ * @covers ::local_credentium_get_category_config
+ * @covers ::local_credentium_save_course_config
+ * @covers ::local_credentium_get_course_config
+ * @covers ::local_credentium_resolve_category_config
  */
-class lib_test extends \advanced_testcase {
-
+final class lib_test extends \advanced_testcase {
     /**
      * Test encryption and decryption of API keys.
      */
-    public function test_encrypt_decrypt_key() {
+    public function test_encrypt_decrypt_key(): void {
         $this->resetAfterTest();
 
         $original = 'test-api-key-12345';
@@ -58,9 +66,72 @@ class lib_test extends \advanced_testcase {
     }
 
     /**
+     * The global API key must be stored encrypted and read back decrypted.
+     */
+    public function test_global_apikey_round_trip(): void {
+        $this->resetAfterTest();
+
+        local_credentium_set_global_apikey('pub.secret-123');
+
+        // At rest the config value must not be the plain key (encryption is
+        // available under PHPUnit; production falls back to plain text only
+        // when \core\encryption cannot operate at all).
+        $this->assertNotEquals('pub.secret-123', get_config('local_credentium', 'apikey'));
+        $this->assertEquals('pub.secret-123', local_credentium_get_global_apikey());
+    }
+
+    /**
+     * A plain-text key stored by a pre-3.0.1 version must still be readable.
+     */
+    public function test_global_apikey_plaintext_fallback(): void {
+        $this->resetAfterTest();
+
+        // Simulate the legacy storage format: raw set_config, no encryption.
+        set_config('apikey', 'legacy-plain-key', 'local_credentium');
+
+        $this->assertEquals('legacy-plain-key', local_credentium_get_global_apikey());
+    }
+
+    /**
+     * Clearing the key must not store an encrypted empty string.
+     */
+    public function test_global_apikey_clear(): void {
+        $this->resetAfterTest();
+
+        local_credentium_set_global_apikey('pub.secret');
+        local_credentium_set_global_apikey('');
+
+        $this->assertEquals('', get_config('local_credentium', 'apikey'));
+        $this->assertEquals('', local_credentium_get_global_apikey());
+    }
+
+    /**
+     * The v3.0.1 upgrade expression must turn a legacy plain-text key into
+     * ciphertext that the accessor still resolves to the original key.
+     */
+    public function test_global_apikey_upgrade_migration(): void {
+        $this->resetAfterTest();
+
+        // Legacy storage: raw plaintext, as every pre-3.0.1 version saved it.
+        set_config('apikey', 'pub.legacy-secret', 'local_credentium');
+
+        // The exact expression db/upgrade.php applies at savepoint 2026072501.
+        $raw = get_config('local_credentium', 'apikey');
+        set_config('apikey', local_credentium_encrypt_key(local_credentium_decrypt_key($raw)), 'local_credentium');
+
+        $this->assertNotEquals('pub.legacy-secret', get_config('local_credentium', 'apikey'));
+        $this->assertEquals('pub.legacy-secret', local_credentium_get_global_apikey());
+
+        // Re-running the migration (an interrupted-upgrade resume) must be harmless.
+        $raw = get_config('local_credentium', 'apikey');
+        set_config('apikey', local_credentium_encrypt_key(local_credentium_decrypt_key($raw)), 'local_credentium');
+        $this->assertEquals('pub.legacy-secret', local_credentium_get_global_apikey());
+    }
+
+    /**
      * Test category config save and get.
      */
-    public function test_category_config() {
+    public function test_category_config(): void {
         $this->resetAfterTest();
 
         // Create a category.
@@ -85,14 +156,14 @@ class lib_test extends \advanced_testcase {
         $this->assertNotNull($retrieved);
         $this->assertEquals(1, $retrieved->enabled);
         $this->assertEquals('https://test.credentium.com', $retrieved->apiurl);
-        $this->assertEquals('test-key-123', $retrieved->apikey); // Should be decrypted
+        $this->assertEquals('test-key-123', $retrieved->apikey); // Should be decrypted.
         $this->assertEquals(100, $retrieved->ratelimit);
     }
 
     /**
      * Test course config save and get.
      */
-    public function test_course_config() {
+    public function test_course_config(): void {
         $this->resetAfterTest();
 
         // Create a course.
@@ -124,14 +195,14 @@ class lib_test extends \advanced_testcase {
     /**
      * Test category config resolution (inheritance).
      */
-    public function test_resolve_category_config() {
+    public function test_resolve_category_config(): void {
         $this->resetAfterTest();
 
         // Category-tree resolution only happens in category mode; without it the
         // resolver deliberately answers with the global configuration.
         set_config('categorymode', 1, 'local_credentium');
 
-        // Create category hierarchy: parent -> child
+        // Create category hierarchy: parent -> child.
         $parent = $this->getDataGenerator()->create_category();
         $child = $this->getDataGenerator()->create_category(['parent' => $parent->id]);
 

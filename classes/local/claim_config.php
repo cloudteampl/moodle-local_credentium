@@ -75,9 +75,12 @@ class claim_config {
      * @return \stdClass|null {apiurl, apikey}, or null when either is missing.
      */
     public static function global_credentials(): ?\stdClass {
+        global $CFG;
+        require_once($CFG->dirroot . '/local/credentium/lib.php');
         return self::build(
             (string) get_config('local_credentium', 'apiurl'),
-            (string) get_config('local_credentium', 'apikey')
+            // The stored global key is encrypted at rest; the accessor decrypts it.
+            local_credentium_get_global_apikey()
         );
     }
 

@@ -23,6 +23,7 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/lib.php');
 
 $id = required_param('id', PARAM_INT);
 
@@ -57,11 +58,11 @@ echo html_writer::start_div('card-body');
 // Basic information.
 echo html_writer::tag('p', html_writer::tag('strong', get_string('user') . ':') . ' ' . fullname($user));
 echo html_writer::tag('p', html_writer::tag('strong', get_string('course') . ':') . ' ' . format_string($course->fullname));
-echo html_writer::tag('p', html_writer::tag('strong', get_string('credentialtemplate', 'local_credentium') . ':') . ' ' . 
+echo html_writer::tag('p', html_writer::tag('strong', get_string('credentialtemplate', 'local_credentium') . ':') . ' ' .
     ($template ? format_string($template->title) : $issuance->templateid));
-echo html_writer::tag('p', html_writer::tag('strong', get_string('credentialid', 'local_credentium') . ':') . ' ' . 
+echo html_writer::tag('p', html_writer::tag('strong', get_string('credentialid', 'local_credentium') . ':') . ' ' .
     $issuance->credentialid);
-echo html_writer::tag('p', html_writer::tag('strong', get_string('status', 'local_credentium') . ':') . ' ' . 
+echo html_writer::tag('p', html_writer::tag('strong', get_string('status', 'local_credentium') . ':') . ' ' .
     get_string('status_' . $issuance->status, 'local_credentium'));
 
 if (!is_null($issuance->grade)) {
@@ -75,7 +76,7 @@ if (!is_null($issuance->grade)) {
     echo html_writer::tag('p', html_writer::tag('strong', get_string('grade') . ':') . ' ' . $gradetext);
 }
 
-echo html_writer::tag('p', html_writer::tag('strong', get_string('issuedate', 'local_credentium') . ':') . ' ' . 
+echo html_writer::tag('p', html_writer::tag('strong', get_string('issuedate', 'local_credentium') . ':') . ' ' .
     userdate($issuance->timeissued ?: $issuance->timecreated));
 
 // Try to get credential details from API if issued.
@@ -83,7 +84,7 @@ if ($issuance->status === 'issued' && $issuance->credentialid) {
     try {
         $client = new \local_credentium\api\client();
         $credential = $client->get_credential($issuance->credentialid);
-        
+
         if ($credential && isset($credential->public_url)) {
             echo html_writer::tag('p', html_writer::link(
                 $credential->public_url,
@@ -92,7 +93,8 @@ if ($issuance->status === 'issued' && $issuance->credentialid) {
             ));
         }
     } catch (Exception $e) {
-        // Silently fail if API is not available.
+        // The external link is a nice-to-have: render the page without it.
+        local_credentium_log('Could not fetch credential details for view', ['error' => $e->getMessage()]);
     }
 }
 
