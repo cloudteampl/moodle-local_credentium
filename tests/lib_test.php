@@ -106,6 +106,29 @@ final class lib_test extends \advanced_testcase {
     }
 
     /**
+     * The v3.0.1 upgrade expression must turn a legacy plain-text key into
+     * ciphertext that the accessor still resolves to the original key.
+     */
+    public function test_global_apikey_upgrade_migration(): void {
+        $this->resetAfterTest();
+
+        // Legacy storage: raw plaintext, as every pre-3.0.1 version saved it.
+        set_config('apikey', 'pub.legacy-secret', 'local_credentium');
+
+        // The exact expression db/upgrade.php applies at savepoint 2026072501.
+        $raw = get_config('local_credentium', 'apikey');
+        set_config('apikey', local_credentium_encrypt_key(local_credentium_decrypt_key($raw)), 'local_credentium');
+
+        $this->assertNotEquals('pub.legacy-secret', get_config('local_credentium', 'apikey'));
+        $this->assertEquals('pub.legacy-secret', local_credentium_get_global_apikey());
+
+        // Re-running the migration (an interrupted-upgrade resume) must be harmless.
+        $raw = get_config('local_credentium', 'apikey');
+        set_config('apikey', local_credentium_encrypt_key(local_credentium_decrypt_key($raw)), 'local_credentium');
+        $this->assertEquals('pub.legacy-secret', local_credentium_get_global_apikey());
+    }
+
+    /**
      * Test category config save and get.
      */
     public function test_category_config(): void {
