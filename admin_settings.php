@@ -87,11 +87,21 @@ class local_credentium_admin_settings_form extends moodleform {
         $mform->addHelpButton('apiurl', 'apiurl_global', 'local_credentium');
         $mform->hideIf('apiurl', 'enabled', 'notchecked');
 
-        // API Key.
+        // API Key. Write-only: the stored key is never sent back into the form
+        // HTML — an empty submission keeps it, a value replaces it.
         $mform->addElement('passwordunmask', 'apikey', get_string('apikey', 'local_credentium'), ['size' => 60]);
         $mform->setType('apikey', PARAM_TEXT);
         $mform->addHelpButton('apikey', 'apikey_global', 'local_credentium');
         $mform->hideIf('apikey', 'enabled', 'notchecked');
+        if (local_credentium_get_global_apikey() !== '') {
+            $mform->addElement(
+                'static',
+                'apikeykeep',
+                '',
+                html_writer::div(get_string('apikey_keep', 'local_credentium'), 'form-text text-muted')
+            );
+            $mform->hideIf('apikeykeep', 'enabled', 'notchecked');
+        }
 
         // Check if API credentials are saved in the database.
         $savedapiurl = get_config('local_credentium', 'apiurl');
@@ -210,8 +220,10 @@ class local_credentium_admin_settings_form extends moodleform {
                     $errors['apiurl'] = get_string('error:invalidapiurl', 'local_credentium');
                 }
 
-                // Validate API Key (required when not using category mode).
-                if (empty($data['apikey'])) {
+                // Validate API Key: required only while no key is stored yet —
+                // the field is write-only and an empty submission keeps the
+                // saved key.
+                if (empty($data['apikey']) && local_credentium_get_global_apikey() === '') {
                     $errors['apikey'] = get_string('required');
                 }
             } else {
@@ -233,7 +245,8 @@ $mform = new local_credentium_admin_settings_form();
 $config = new stdClass();
 $config->enabled = get_config('local_credentium', 'enabled');
 $config->apiurl = get_config('local_credentium', 'apiurl');
-$config->apikey = local_credentium_get_global_apikey();
+// The API key is deliberately NOT loaded into the form: the field is
+// write-only, so the decrypted secret never round-trips through page HTML.
 $config->categorymode = get_config('local_credentium', 'categorymode');
 $config->claimenabled = get_config('local_credentium', 'claimenabled');
 // Same unset-means-on default the banner hook applies at render time.
@@ -256,7 +269,10 @@ if ($mform->is_cancelled()) {
     // Save settings.
     set_config('enabled', !empty($data->enabled) ? 1 : 0, 'local_credentium');
     set_config('apiurl', !empty($data->apiurl) ? trim($data->apiurl) : '', 'local_credentium');
-    local_credentium_set_global_apikey(!empty($data->apikey) ? $data->apikey : '');
+    // Write-only field: an empty submission means "keep the saved key".
+    if (!empty($data->apikey)) {
+        local_credentium_set_global_apikey($data->apikey);
+    }
     set_config('categorymode', !empty($data->categorymode) ? 1 : 0, 'local_credentium');
     set_config('claimenabled', !empty($data->claimenabled) ? 1 : 0, 'local_credentium');
     set_config('showbanner', !empty($data->showbanner) ? 1 : 0, 'local_credentium');

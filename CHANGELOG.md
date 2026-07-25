@@ -5,6 +5,17 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - 2026-07-25
+
+### Security
+- **The API key form fields are now write-only** (global settings and category
+  settings alike): the decrypted key is no longer sent back into the page HTML.
+  Leaving the field blank keeps the saved key; entering a value replaces it —
+  a hint under the field says so whenever a key is stored, and the key is only
+  required while none is saved yet. Completes the at-rest encryption shipped
+  in 3.0.1 by removing the last place the plain-text key travelled to the
+  browser (the connection test still shows only the last four characters).
+
 ## [3.0.1] - 2026-07-25
 
 ### Security
