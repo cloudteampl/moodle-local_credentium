@@ -259,3 +259,123 @@ $string['downloadexcel'] = 'Download as Excel';
 $string['summary'] = 'Summary';
 $string['total'] = 'Total';
 $string['inprogress'] = 'In Progress';
+
+// Exception messages the API client raises (identifiers without a lang string
+// would render as placeholders on error pages).
+$string['apierror'] = 'Credentium® API error: {$a}';
+$string['apinotconfigured'] = 'The Credentium® API is not configured.';
+$string['invalidjsonresponse'] = 'The Credentium® API returned an invalid response.';
+$string['invalidresponse'] = 'The Credentium® API returned an unexpected response.';
+$string['issuancefailed'] = 'Failed to issue the credential: {$a}';
+
+// Claim feature (absorbed from the former Credentium® Claim plugin in v3.0.0).
+$string['claimsettings_heading'] = 'Claim reminders';
+$string['claimsettings_desc'] = 'Check with Credentium® whether issued credentials have been claimed, and remind learners — by notification, user-menu entry and banner — about any credential still waiting to be collected.';
+$string['claimenabled'] = 'Enable claim status checks and reminders';
+$string['claimenabled_help'] = 'When enabled, the plugin periodically checks the claim status of issued credentials and shows learners a reminder to claim any credential that is still unclaimed.';
+$string['maintenance_heading'] = 'Diagnostics and data retention';
+$string['syncinterval'] = 'Status check interval';
+$string['syncinterval_custom'] = 'Custom (keep current schedule)';
+$string['syncinterval_help'] = 'How often the scheduled task asks Credentium® whether issued credentials are ready to claim or have been claimed. Shorter intervals keep statuses fresher at the cost of more API calls, and are useful while testing. Changing this rewrites the schedule of the "Synchronise Credentium credential claim statuses" task, which can also be edited under Server > Scheduled tasks.';
+$string['showbanner'] = 'Show reminder banner';
+$string['showbanner_help'] = 'When enabled, a dismissible banner is shown at the top of every page to learners who have an unclaimed credential. When disabled, learners can still claim credentials from the "My credentials" page.';
+$string['uninstalllegacyclaim'] = 'The separate Credentium® Claim plugin (local_credentiumclaim) is still installed. Its functionality is built into this plugin since version 3.0.0 and its data and settings have been migrated, so it has been disabled — please uninstall it under Site administration > Plugins > Plugins overview.';
+
+// Claim: learner-facing surfaces.
+$string['banner_cta'] = 'Claim now';
+$string['banner_dismiss'] = 'Dismiss';
+$string['banner_message'] = 'Credentium® has issued you {$a} digital credential(s) that you have not claimed yet.';
+$string['banner_title'] = 'You have a new digital credential to claim';
+$string['cachedef_claimable'] = 'Per-user count of unclaimed Credentium® credentials';
+$string['claim'] = 'Claim';
+$string['claim_alreadyclaimed'] = 'You have already claimed this credential. It is available in your Credentium® Wallet.';
+$string['claim_backtolist'] = 'Back to my credentials';
+$string['claim_error'] = 'We could not open the claim link right now. Please try again later.';
+$string['claim_heading'] = 'Claim your credential';
+$string['claim_notready'] = 'This credential is still being prepared. Please try again in a few minutes.';
+$string['col_action'] = 'Action';
+$string['col_course'] = 'Course';
+$string['col_status'] = 'Status';
+$string['connection'] = 'API connection';
+$string['credentium:claim'] = 'Claim own Credentium® credentials';
+$string['message_ready_body'] = 'Credentium® has issued you a digital credential that is ready to claim. Open "My credentials" to save it to your Credentium® Wallet.';
+$string['message_ready_body_course'] = 'Credentium® has issued you a digital credential for "{$a->course}" that is ready to claim. Open "My credentials" to save it to your Credentium® Wallet.';
+$string['message_ready_linktext'] = 'Go to My credentials';
+$string['message_ready_small'] = 'You have a Credentium® credential ready to claim.';
+$string['message_ready_subject'] = 'You have a credential to claim';
+$string['messageprovider:credentialready'] = 'A digital credential is ready to claim';
+$string['mycredentials'] = 'My credentials';
+$string['mycredentials_empty'] = 'No Credentium® credentials have been issued to you yet.';
+$string['mycredentials_heading'] = 'My Credentium® credentials';
+$string['mycredentials_intro'] = 'These digital credentials have been issued to you. Click "Claim" to save one to your Credentium® Wallet. The ones you have already collected stay listed below — "View in wallet" opens any of them again.';
+$string['nav_mycredentials'] = 'My credentials';
+$string['nav_mycredentials_count'] = 'My credentials ({$a})';
+$string['viewinwallet'] = 'View in wallet';
+
+// Claim: status vocabulary (distinct from the issuance status_* strings above).
+$string['claimstatus_claimed'] = 'Claimed';
+$string['claimstatus_failed'] = 'Failed';
+$string['claimstatus_issued'] = 'Ready to claim';
+$string['claimstatus_processing'] = 'Processing';
+$string['claimstatus_unknown'] = 'Unknown';
+
+// Claim: status report and diagnostics.
+$string['claimreport'] = 'Credentium® Claim status';
+$string['report_checknow'] = 'Check status now';
+$string['report_checknow_busy'] = 'A status check is already running (started by cron or another administrator). Try again in a moment.';
+$string['report_checknow_failed'] = 'The status check could not be completed. Enable debug logging to see the reason, or check the last run outcome below.';
+$string['report_connection_missing'] = 'No API credentials are configured, so claim statuses cannot be checked.';
+$string['report_connection_ok'] = 'Configured ({$a})';
+$string['report_count'] = 'Count';
+$string['report_diagnostics'] = 'Diagnostics';
+$string['report_error_auth'] = 'Credentium® refused the API key. In the plugin settings, check that the key is still valid and that it carries the "credentials:read" scope — a key that may only issue credentials cannot read their status.';
+$string['report_error_busy'] = 'Credentium® asked the plugin to slow down, or timed out while answering. The plugin backs off and retries on its own, so no action is normally needed. If it happens on every run, raise the status check interval in the plugin settings.';
+$string['report_error_client'] = 'Credentium® rejected the request itself. This normally means the plugin and the Credentium® API are out of step: check whether a plugin update is available, and quote the technical detail above if you contact support.';
+$string['report_error_generic'] = 'The last status check failed. Quote the technical detail above if you contact support.';
+$string['report_error_network'] = 'The Credentium® API could not be reached at all. Check that this server can make outbound HTTPS requests to the configured address — a proxy, a firewall rule or DNS is the usual cause.';
+$string['report_error_pending'] = '{$a} tracked credential(s) could not be checked on this run; they keep their last known status and are re-checked automatically.';
+$string['report_error_server'] = 'Credentium® accepted the request but could not complete it. This is a fault on the Credentium® side, not in this site\'s configuration. The plugin already retried, and will try again at the next scheduled check — statuses catch up on their own once the service recovers. If it keeps failing, contact Credentium® support and quote the technical detail above.';
+$string['report_heading'] = 'Credentium® Claim status report';
+$string['report_intro'] = 'Overview of tracked credential claim statuses across all learners.';
+$string['report_lastresult'] = 'Last run outcome';
+$string['report_lastrun'] = 'Last sync run';
+$string['report_lastsync'] = 'Most recent credential check';
+$string['report_never'] = 'Never';
+$string['report_notified'] = 'Notifications sent on the last run';
+$string['report_notifyfailed'] = 'Could not send {$a} "ready to claim" notification(s) on the last run (a learner may be suspended, or a delivery channel may have failed). Those learners still see the reminder in the user menu and banner when they log in.';
+$string['report_plugindisabled'] = 'Claim status checks are disabled, so learners are not being reminded about unclaimed credentials.';
+$string['report_property'] = 'Property';
+$string['report_result_disabled'] = 'Skipped: claim status checks are disabled.';
+$string['report_result_error'] = 'Failed: {$a}';
+$string['report_result_notconfigured'] = 'Skipped: no API credentials are configured.';
+$string['report_result_ok'] = 'Completed: {$a->polled} credential(s) checked, {$a->updated} updated.';
+$string['report_schedule_custom'] = 'Custom schedule (edited under Server > Scheduled tasks)';
+$string['report_schedule_every'] = 'Every {$a}';
+$string['report_status'] = 'Status';
+$string['report_tasklastrun'] = 'Scheduled task last ran';
+$string['report_tasknextrun'] = 'Scheduled task next runs';
+$string['report_total'] = 'Total tracked credentials';
+$string['report_unmatched'] = 'Credentium® did not recognise {$a} tracked credential(s). This usually means the API key belongs to a different organisation than the one that issued them.';
+$string['report_unresolved'] = '{$a} tracked credential(s) were skipped because no API credentials apply to their course.';
+$string['report_value'] = 'Value';
+$string['task_syncclaimstatus'] = 'Synchronise Credentium credential claim statuses';
+$string['testconnection_readscope_error'] = 'Status-read access could not be verified right now. This may be a temporary problem rather than a configuration one. Details: {$a}';
+$string['testconnection_readscope_fail'] = 'The API key was accepted but cannot read credential statuses. The claim feature needs the credentials:read scope on top of the scopes issuing uses — add it to the key in Credentium®. Details: {$a}';
+$string['testconnection_readscope_ok'] = 'The API key can read credential statuses (credentials:read scope present).';
+
+// Claim: errors.
+$string['error:claimapifailed'] = 'The Credentium® API returned an error.';
+$string['error:claimnotconfigured'] = 'Claim reminders are not enabled. Check the Credentium® plugin settings.';
+$string['error:credentialnotfound'] = 'The requested credential could not be found.';
+$string['error:invalidjsonresponse'] = 'The Credentium® API returned an invalid response.';
+
+// Claim: privacy.
+$string['privacy:metadata:credentium_api:issuerequestid'] = 'The Credentium® issue-request identifier for the credential being checked or claimed.';
+$string['privacy:metadata:credentium_api:locale'] = 'The language in which the claim experience should be presented.';
+$string['privacy:metadata:local_credentium_claims'] = 'Tracking information about issued Credentium® credentials and whether the learner has claimed them.';
+$string['privacy:metadata:local_credentium_claims:courseid'] = 'The ID of the course the credential was issued for.';
+$string['privacy:metadata:local_credentium_claims:credentialid'] = 'The Credentium® identifier of the credential itself, kept so a support query can be matched to Credentium®\'s records.';
+$string['privacy:metadata:local_credentium_claims:credentialkey'] = 'The Credentium® issue-request identifier for the credential.';
+$string['privacy:metadata:local_credentium_claims:remotestatus'] = 'The last known claim status of the credential.';
+$string['privacy:metadata:local_credentium_claims:timecreated'] = 'The time the tracking row was created.';
+$string['privacy:metadata:local_credentium_claims:userid'] = 'The ID of the user the credential belongs to.';

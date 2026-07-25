@@ -259,3 +259,123 @@ $string['downloadexcel'] = 'Pobierz jako Excel';
 $string['summary'] = 'Podsumowanie';
 $string['total'] = 'Razem';
 $string['inprogress'] = 'W toku';
+
+// Exception messages the API client raises (identifiers without a lang string
+// would render as placeholders on error pages).
+$string['apierror'] = 'Błąd API Credentium®: {$a}';
+$string['apinotconfigured'] = 'API Credentium® nie jest skonfigurowane.';
+$string['invalidjsonresponse'] = 'API Credentium® zwróciło nieprawidłową odpowiedź.';
+$string['invalidresponse'] = 'API Credentium® zwróciło nieoczekiwaną odpowiedź.';
+$string['issuancefailed'] = 'Nie udało się wystawić poświadczenia: {$a}';
+
+// Claim feature (absorbed from the former Credentium® Claim plugin in v3.0.0).
+$string['claimsettings_heading'] = 'Przypomnienia o odbiorze';
+$string['claimsettings_desc'] = 'Sprawdzaj w Credentium®, czy wystawione poświadczenia zostały odebrane, i przypominaj uczestnikom — powiadomieniem, pozycją w menu użytkownika i banerem — o każdym poświadczeniu wciąż czekającym na odbiór.';
+$string['claimenabled'] = 'Włącz sprawdzanie statusu odbioru i przypomnienia';
+$string['claimenabled_help'] = 'Po włączeniu wtyczka okresowo sprawdza status odebrania wystawionych poświadczeń i wyświetla uczestnikom przypomnienie o odebraniu każdego poświadczenia, które nie zostało jeszcze odebrane.';
+$string['maintenance_heading'] = 'Diagnostyka i retencja danych';
+$string['syncinterval'] = 'Częstotliwość sprawdzania statusu';
+$string['syncinterval_custom'] = 'Niestandardowa (zachowaj bieżący harmonogram)';
+$string['syncinterval_help'] = 'Jak często zaplanowane zadanie pyta Credentium®, czy wystawione poświadczenia są gotowe do odbioru lub zostały odebrane. Krótsze odstępy oznaczają świeższe statusy kosztem większej liczby wywołań API i są przydatne podczas testów. Zmiana tej wartości przepisuje harmonogram zadania „Synchronizacja statusów odbioru poświadczeń Credentium”, który można też edytować w Serwer > Zaplanowane zadania.';
+$string['showbanner'] = 'Pokaż baner przypomnienia';
+$string['showbanner_help'] = 'Po włączeniu na górze każdej strony wyświetlany jest zamykalny baner dla uczestników mających nieodebrane poświadczenie. Po wyłączeniu uczestnicy nadal mogą odbierać poświadczenia ze strony „Moje poświadczenia”.';
+$string['uninstalllegacyclaim'] = 'Osobna wtyczka Credentium® Claim (local_credentiumclaim) jest nadal zainstalowana. Od wersji 3.0.0 jej funkcjonalność jest wbudowana w tę wtyczkę, a dane i ustawienia zostały zmigrowane, więc została wyłączona — odinstaluj ją w Administracja serwisu > Wtyczki > Przegląd wtyczek.';
+
+// Claim: learner-facing surfaces.
+$string['banner_cta'] = 'Odbierz teraz';
+$string['banner_dismiss'] = 'Odrzuć';
+$string['banner_message'] = 'Credentium® wystawił Ci {$a} poświadczenie(-a) cyfrowe, których jeszcze nie odebrano.';
+$string['banner_title'] = 'Masz nowe poświadczenie cyfrowe do odebrania';
+$string['cachedef_claimable'] = 'Liczba nieodebranych poświadczeń Credentium® na użytkownika';
+$string['claim'] = 'Odbierz';
+$string['claim_alreadyclaimed'] = 'To poświadczenie zostało już przez Ciebie odebrane. Jest dostępne w Twoim Portfelu Credentium®.';
+$string['claim_backtolist'] = 'Powrót do moich poświadczeń';
+$string['claim_error'] = 'Nie udało się teraz otworzyć linku do odbioru. Spróbuj ponownie później.';
+$string['claim_heading'] = 'Odbierz swoje poświadczenie';
+$string['claim_notready'] = 'To poświadczenie jest jeszcze przygotowywane. Spróbuj ponownie za kilka minut.';
+$string['col_action'] = 'Akcja';
+$string['col_course'] = 'Kurs';
+$string['col_status'] = 'Status';
+$string['connection'] = 'Połączenie z API';
+$string['credentium:claim'] = 'Odbieranie własnych poświadczeń Credentium®';
+$string['message_ready_body'] = 'Credentium® wystawił Ci poświadczenie cyfrowe gotowe do odebrania. Otwórz „Moje poświadczenia”, aby zapisać je w swoim Portfelu Credentium®.';
+$string['message_ready_body_course'] = 'Credentium® wystawił Ci poświadczenie cyfrowe za „{$a->course}” gotowe do odebrania. Otwórz „Moje poświadczenia”, aby zapisać je w swoim Portfelu Credentium®.';
+$string['message_ready_linktext'] = 'Przejdź do moich poświadczeń';
+$string['message_ready_small'] = 'Masz poświadczenie Credentium® gotowe do odebrania.';
+$string['message_ready_subject'] = 'Masz poświadczenie do odebrania';
+$string['messageprovider:credentialready'] = 'Poświadczenie cyfrowe jest gotowe do odebrania';
+$string['mycredentials'] = 'Moje poświadczenia';
+$string['mycredentials_empty'] = 'Nie wystawiono Ci jeszcze żadnych poświadczeń Credentium®.';
+$string['mycredentials_heading'] = 'Moje poświadczenia Credentium®';
+$string['mycredentials_intro'] = 'Te poświadczenia cyfrowe zostały Ci wystawione. Kliknij „Odbierz”, aby zapisać poświadczenie w swoim Portfelu Credentium®. Już odebrane pozostają na liście — „Zobacz w portfelu” otwiera każde z nich ponownie.';
+$string['nav_mycredentials'] = 'Moje poświadczenia';
+$string['nav_mycredentials_count'] = 'Moje poświadczenia ({$a})';
+$string['viewinwallet'] = 'Zobacz w portfelu';
+
+// Claim: status vocabulary (distinct from the issuance status_* strings above).
+$string['claimstatus_claimed'] = 'Odebrane';
+$string['claimstatus_failed'] = 'Niepowodzenie';
+$string['claimstatus_issued'] = 'Gotowe do odbioru';
+$string['claimstatus_processing'] = 'W przygotowaniu';
+$string['claimstatus_unknown'] = 'Nieznany';
+
+// Claim: status report and diagnostics.
+$string['claimreport'] = 'Status odbioru Credentium®';
+$string['report_checknow'] = 'Sprawdź status teraz';
+$string['report_checknow_busy'] = 'Sprawdzanie statusu już trwa (uruchomione przez cron lub innego administratora). Spróbuj ponownie za chwilę.';
+$string['report_checknow_failed'] = 'Nie udało się przeprowadzić sprawdzenia statusu. Włącz logowanie diagnostyczne, aby poznać przyczynę, lub sprawdź wynik ostatniego uruchomienia poniżej.';
+$string['report_connection_missing'] = 'Nie skonfigurowano poświadczeń API, więc statusy odbioru nie mogą być sprawdzane.';
+$string['report_connection_ok'] = 'Skonfigurowane ({$a})';
+$string['report_count'] = 'Liczba';
+$string['report_diagnostics'] = 'Diagnostyka';
+$string['report_error_auth'] = 'Credentium® odrzucił klucz API. W ustawieniach wtyczki sprawdź, czy klucz jest nadal ważny i czy ma uprawnienie „credentials:read” — klucz, który może jedynie wystawiać poświadczenia, nie może odczytywać ich statusu.';
+$string['report_error_busy'] = 'Credentium® poprosił wtyczkę o zwolnienie tempa lub przekroczył czas odpowiedzi. Wtyczka sama odczekuje i ponawia próbę, więc zwykle nie trzeba nic robić. Jeśli dzieje się to przy każdym uruchomieniu, zwiększ odstęp sprawdzania statusu w ustawieniach wtyczki.';
+$string['report_error_client'] = 'Credentium® odrzucił samo żądanie. Zwykle oznacza to rozbieżność między wtyczką a API Credentium®: sprawdź, czy jest dostępna aktualizacja wtyczki, a kontaktując się ze wsparciem podaj szczegóły techniczne powyżej.';
+$string['report_error_generic'] = 'Ostatnie sprawdzenie statusu nie powiodło się. Kontaktując się ze wsparciem, podaj szczegóły techniczne powyżej.';
+$string['report_error_network'] = 'Nie udało się w ogóle połączyć z API Credentium®. Sprawdź, czy ten serwer może wykonywać wychodzące połączenia HTTPS pod skonfigurowany adres — najczęstszą przyczyną jest proxy, reguła zapory lub DNS.';
+$string['report_error_pending'] = 'W tym uruchomieniu nie udało się sprawdzić {$a} śledzonych poświadczeń; zachowują one ostatnio znany status i zostaną sprawdzone ponownie automatycznie.';
+$string['report_error_server'] = 'Credentium® przyjął żądanie, ale nie zdołał go zrealizować. To błąd po stronie Credentium®, a nie konfiguracji tej strony. Wtyczka już ponowiła próbę i spróbuje ponownie przy następnym zaplanowanym sprawdzeniu — statusy uzupełnią się same, gdy usługa wróci do działania. Jeśli błąd się powtarza, skontaktuj się ze wsparciem Credentium® i podaj szczegóły techniczne powyżej.';
+$string['report_heading'] = 'Raport statusu odbioru Credentium®';
+$string['report_intro'] = 'Przegląd śledzonych statusów odbioru poświadczeń wszystkich uczestników.';
+$string['report_lastresult'] = 'Wynik ostatniego uruchomienia';
+$string['report_lastrun'] = 'Ostatnie uruchomienie synchronizacji';
+$string['report_lastsync'] = 'Ostatnie sprawdzenie poświadczenia';
+$string['report_never'] = 'Nigdy';
+$string['report_notified'] = 'Powiadomienia wysłane w ostatnim uruchomieniu';
+$string['report_notifyfailed'] = 'Nie udało się wysłać {$a} powiadomień „gotowe do odbioru” w ostatnim uruchomieniu (uczestnik może być zawieszony lub kanał dostarczania mógł zawieść). Ci uczestnicy nadal zobaczą przypomnienie w menu użytkownika i banerze po zalogowaniu.';
+$string['report_plugindisabled'] = 'Sprawdzanie statusu odbioru jest wyłączone, więc uczestnicy nie otrzymują przypomnień o nieodebranych poświadczeniach.';
+$string['report_property'] = 'Właściwość';
+$string['report_result_disabled'] = 'Pominięto: sprawdzanie statusu odbioru jest wyłączone.';
+$string['report_result_error'] = 'Niepowodzenie: {$a}';
+$string['report_result_notconfigured'] = 'Pominięto: nie skonfigurowano poświadczeń API.';
+$string['report_result_ok'] = 'Zakończono: sprawdzono poświadczeń: {$a->polled}, zaktualizowano: {$a->updated}.';
+$string['report_schedule_custom'] = 'Harmonogram niestandardowy (edytowany w Serwer > Zaplanowane zadania)';
+$string['report_schedule_every'] = 'Co {$a}';
+$string['report_status'] = 'Status';
+$string['report_tasklastrun'] = 'Ostatnie uruchomienie zaplanowanego zadania';
+$string['report_tasknextrun'] = 'Następne uruchomienie zaplanowanego zadania';
+$string['report_total'] = 'Łącznie śledzonych poświadczeń';
+$string['report_unmatched'] = 'Credentium® nie rozpoznał {$a} śledzonych poświadczeń. Zwykle oznacza to, że klucz API należy do innej organizacji niż ta, która je wystawiła.';
+$string['report_unresolved'] = 'Pominięto {$a} śledzonych poświadczeń, ponieważ dla ich kursu nie ma żadnych poświadczeń API.';
+$string['report_value'] = 'Wartość';
+$string['task_syncclaimstatus'] = 'Synchronizacja statusów odbioru poświadczeń Credentium';
+$string['testconnection_readscope_error'] = 'Nie udało się teraz zweryfikować dostępu do odczytu statusów. Może to być problem chwilowy, a nie konfiguracyjny. Szczegóły: {$a}';
+$string['testconnection_readscope_fail'] = 'Klucz API został zaakceptowany, ale nie może odczytywać statusów poświadczeń. Funkcja odbioru wymaga zakresu credentials:read obok zakresów używanych do wystawiania — dodaj go do klucza w Credentium®. Szczegóły: {$a}';
+$string['testconnection_readscope_ok'] = 'Klucz API może odczytywać statusy poświadczeń (zakres credentials:read jest obecny).';
+
+// Claim: errors.
+$string['error:claimapifailed'] = 'API Credentium® zwróciło błąd.';
+$string['error:claimnotconfigured'] = 'Przypomnienia o odbiorze nie są włączone. Sprawdź ustawienia wtyczki Credentium®.';
+$string['error:credentialnotfound'] = 'Nie znaleziono żądanego poświadczenia.';
+$string['error:invalidjsonresponse'] = 'API Credentium® zwróciło nieprawidłową odpowiedź.';
+
+// Claim: privacy.
+$string['privacy:metadata:credentium_api:issuerequestid'] = 'Identyfikator żądania wystawienia (issueRequestId) Credentium® sprawdzanego lub odbieranego poświadczenia.';
+$string['privacy:metadata:credentium_api:locale'] = 'Język, w którym ma być prezentowany proces odbioru.';
+$string['privacy:metadata:local_credentium_claims'] = 'Informacje śledzące o wystawionych poświadczeniach Credentium® oraz o tym, czy uczestnik je odebrał.';
+$string['privacy:metadata:local_credentium_claims:courseid'] = 'Identyfikator kursu, dla którego wystawiono poświadczenie.';
+$string['privacy:metadata:local_credentium_claims:credentialid'] = 'Identyfikator samego poświadczenia w Credentium®, przechowywany po to, aby zgłoszenie do wsparcia dało się powiązać z rejestrami Credentium®.';
+$string['privacy:metadata:local_credentium_claims:credentialkey'] = 'Identyfikator żądania wystawienia (issueRequestId) Credentium® dla poświadczenia.';
+$string['privacy:metadata:local_credentium_claims:remotestatus'] = 'Ostatni znany status odbioru poświadczenia.';
+$string['privacy:metadata:local_credentium_claims:timecreated'] = 'Czas utworzenia wiersza śledzenia.';
+$string['privacy:metadata:local_credentium_claims:userid'] = 'Identyfikator użytkownika, do którego należy poświadczenie.';
