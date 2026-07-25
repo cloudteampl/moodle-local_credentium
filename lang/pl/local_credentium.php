@@ -29,7 +29,7 @@ $string['apierror'] = 'Błąd API Credentium®: {$a}';
 $string['apikey'] = 'Klucz API';
 $string['apikey_desc'] = 'Twój klucz API Credentium do uwierzytelniania.';
 $string['apikey_global'] = 'Klucz API';
-$string['apikey_global_help'] = 'Twój klucz API Credentium do uwierzytelniania. Klucz jest przechowywany w zaszyfrowanej postaci w bazie danych. Gdy klucz jest już zapisany, pozostaw pole puste, aby go zachować — wpisz wartość tylko wtedy, gdy chcesz go zastąpić.';
+$string['apikey_global_help'] = 'Twój klucz API Credentium do uwierzytelniania. Klucz jest przechowywany w zaszyfrowanej postaci w bazie danych. Gdy klucz jest już zapisany, pozostaw pole puste, aby go zachować — wpisz wartość tylko wtedy, gdy chcesz go zastąpić. Aby całkowicie usunąć klucz, użyj CLI (admin/cli/cfg.php --component=local_credentium --name=apikey --unset) lub odinstaluj wtyczkę.';
 $string['apikey_help'] = 'Twój klucz API Credentium do uwierzytelniania. Ten klucz zostanie zaszyfrowany podczas zapisywania. Gdy klucz jest już zapisany, pozostaw pole puste, aby go zachować — wpisz wartość tylko wtedy, gdy chcesz go zastąpić.';
 $string['apikey_keep'] = 'Klucz API jest zapisany. Pozostaw pole puste, aby go zachować, lub wpisz nowy klucz, aby go zastąpić.';
 $string['apinotconfigured'] = 'API Credentium® nie jest skonfigurowane.';

@@ -29,7 +29,7 @@ $string['apierror'] = 'Credentium® API error: {$a}';
 $string['apikey'] = 'API Key';
 $string['apikey_desc'] = 'Your Credentium API key for authentication.';
 $string['apikey_global'] = 'API Key';
-$string['apikey_global_help'] = 'Your Credentium API key for authentication. The key is stored encrypted in the database. When a key is already saved, leave the field blank to keep it — enter a value only to replace it.';
+$string['apikey_global_help'] = 'Your Credentium API key for authentication. The key is stored encrypted in the database. When a key is already saved, leave the field blank to keep it — enter a value only to replace it. To remove the key entirely, use the CLI (admin/cli/cfg.php --component=local_credentium --name=apikey --unset) or uninstall the plugin.';
 $string['apikey_help'] = 'Your Credentium API key for authentication. This key will be encrypted when saved. When a key is already saved, leave the field blank to keep it — enter a value only to replace it.';
 $string['apikey_keep'] = 'An API key is saved. Leave this field blank to keep it, or enter a new key to replace it.';
 $string['apinotconfigured'] = 'The Credentium® API is not configured.';
