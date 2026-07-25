@@ -72,6 +72,8 @@ class observer_test extends \advanced_testcase {
             'relateduserid' => $user->id,
             'context' => \context_course::instance($course->id),
             'courseid' => $course->id,
+            // Core's course_completed event requires the completed user in other too.
+            'other' => ['relateduserid' => $user->id],
         ]);
         $event->trigger();
 
@@ -108,6 +110,8 @@ class observer_test extends \advanced_testcase {
             'relateduserid' => $user->id,
             'context' => \context_course::instance($course->id),
             'courseid' => $course->id,
+            // Core's course_completed event requires the completed user in other too.
+            'other' => ['relateduserid' => $user->id],
         ]);
         $event->trigger();
 
@@ -140,6 +144,8 @@ class observer_test extends \advanced_testcase {
             'relateduserid' => $user->id,
             'context' => \context_course::instance($course->id),
             'courseid' => $course->id,
+            // Core's course_completed event requires the completed user in other too.
+            'other' => ['relateduserid' => $user->id],
         ]);
         $event->trigger();
 

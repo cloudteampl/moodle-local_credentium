@@ -59,12 +59,16 @@ class provider_test extends \core_privacy\tests\provider_testcase {
         $record->timeissued = time();
         $DB->insert_record('local_credentium_issuances', $record);
 
-        // Get contexts.
+        // Get contexts: the provider reports the course context of the issuance and
+        // always the user's own context (claim tracking lives there).
         $contextlist = provider::get_contexts_for_userid($user->id);
-        $this->assertCount(1, $contextlist);
 
         $coursecontext = \context_course::instance($course->id);
-        $this->assertEquals($coursecontext->id, $contextlist->get_contextids()[0]);
+        $usercontext = \context_user::instance($user->id);
+        $this->assertEqualsCanonicalizing(
+            [$coursecontext->id, $usercontext->id],
+            array_map('intval', $contextlist->get_contextids())
+        );
     }
 
     /**
@@ -95,11 +99,14 @@ class provider_test extends \core_privacy\tests\provider_testcase {
 
         provider::export_user_data($contextlist);
 
-        // Verify export.
+        // Verify export. The data is written under [pluginname, issuancehistory].
         $writer = \core_privacy\local\request\writer::with_context($coursecontext);
         $this->assertTrue($writer->has_any_data());
 
-        $data = $writer->get_data([get_string('pluginname', 'local_credentium')]);
+        $data = $writer->get_data([
+            get_string('pluginname', 'local_credentium'),
+            get_string('issuancehistory', 'local_credentium'),
+        ]);
         $this->assertNotEmpty($data);
         $this->assertNotEmpty($data->issuances);
     }
