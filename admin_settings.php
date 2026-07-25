@@ -110,6 +110,10 @@ class local_credentium_admin_settings_form extends moodleform {
             '<div class="alert alert-info">' .
             get_string('claimsettings_desc', 'local_credentium') .
             '</div>');
+        // The section header itself cannot be hidden via hideIf; hiding the intro
+        // and every field leaves just the collapsed header while the master switch
+        // is off, which is as close as moodleforms get.
+        $mform->hideIf('claimintro', 'enabled', 'notchecked');
 
         $mform->addElement('checkbox', 'claimenabled', get_string('claimenabled', 'local_credentium'));
         $mform->addHelpButton('claimenabled', 'claimenabled', 'local_credentium');

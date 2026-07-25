@@ -280,7 +280,10 @@ class provider implements
             // Delete all credential issuances for this course.
             $DB->delete_records('local_credentium_issuances', ['courseid' => $context->instanceid]);
         } else if ($context->contextlevel == CONTEXT_USER) {
-            // A user context belongs to exactly one user: remove their claim tracking.
+            // A user context belongs to exactly one user: remove everything this
+            // plugin holds about them, mirroring delete_data_for_user() — the two
+            // deletion APIs must not disagree about what a user-context wipe means.
+            $DB->delete_records('local_credentium_issuances', ['userid' => $context->instanceid]);
             $DB->delete_records('local_credentium_claims', ['userid' => $context->instanceid]);
             \local_credentium\local\claimable::purge_cache((int) $context->instanceid);
         }
@@ -337,8 +340,11 @@ class provider implements
             }
         } else if ($context->contextlevel == CONTEXT_USER) {
             // A user context belongs to exactly one user; act only when they are listed.
+            // Delete both tables, mirroring delete_data_for_user(): the userlist API
+            // must never advertise data (via get_users_in_context) it would not remove.
             $userids = $userlist->get_userids();
             if (!empty($userids) && in_array($context->instanceid, $userids)) {
+                $DB->delete_records('local_credentium_issuances', ['userid' => $context->instanceid]);
                 $DB->delete_records('local_credentium_claims', ['userid' => $context->instanceid]);
                 \local_credentium\local\claimable::purge_cache((int) $context->instanceid);
             }

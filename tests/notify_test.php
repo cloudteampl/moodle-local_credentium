@@ -174,6 +174,20 @@ final class notify_test extends \advanced_testcase {
         $this->assertCount(1, $hook->get_navitems());
     }
 
+    public function test_the_master_switch_alone_disables_the_claim_surfaces(): void {
+        // The deliberate v3 behaviour change: the legacy Claim plugin ran on its own
+        // switch, but a disabled integration must not keep nudging learners.
+        set_config('enabled', 0, 'local_credentium');
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+        claimable::record_candidate($user->id, 'key-1', null, null);
+        claimable::apply_remote_status($this->row($user->id, 'key-1'), 'issued');
+
+        $hook = new \core_user\hook\extend_user_menu();
+        hook_callbacks::extend_user_menu($hook);
+        $this->assertCount(0, $hook->get_navitems());
+    }
+
     public function test_no_menu_entry_when_the_plugin_is_disabled(): void {
         set_config('claimenabled', 0, 'local_credentium');
         $user = $this->getDataGenerator()->create_user();

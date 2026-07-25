@@ -280,6 +280,10 @@ function xmldb_local_credentium_upgrade($oldversion) {
             set_config('enabled', 0, 'local_credentiumclaim');
         }
 
+        // No explicit cache purge: Moodle's upgrade pipeline purges caches after
+        // plugin upgrades, and the 'claimable' MUC definition is new in this
+        // version, so there is nothing stale to invalidate.
+
         upgrade_plugin_savepoint(true, 2026072500, 'local', 'credentium');
     }
 
