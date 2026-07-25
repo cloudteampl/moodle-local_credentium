@@ -25,6 +25,7 @@
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/formslib.php');
 require_once($CFG->libdir . '/adminlib.php');
+require_once(__DIR__ . '/lib.php');
 
 require_login();
 require_capability('moodle/site:config', context_system::instance());
@@ -102,6 +103,42 @@ class local_credentium_admin_settings_form extends moodleform {
         }
         $mform->hideIf('testconnection', 'enabled', 'notchecked');
 
+        // Claim reminders (absorbed from the former Credentium Claim plugin).
+        $mform->addElement('header', 'claimsettings', get_string('claimsettings_heading', 'local_credentium'));
+        $mform->setExpanded('claimsettings', true);
+        $mform->addElement('static', 'claimintro', '',
+            '<div class="alert alert-info">' .
+            get_string('claimsettings_desc', 'local_credentium') .
+            '</div>');
+
+        $mform->addElement('checkbox', 'claimenabled', get_string('claimenabled', 'local_credentium'));
+        $mform->addHelpButton('claimenabled', 'claimenabled', 'local_credentium');
+        $mform->hideIf('claimenabled', 'enabled', 'notchecked');
+
+        // How often the claim status-check task runs.
+        $intervals = local_credentium_claim_sync_interval_options();
+        if (local_credentium_get_claim_sync_interval() === null) {
+            // The schedule was hand-edited under Server > Scheduled tasks; say so
+            // rather than silently overwriting it with the nearest offered value.
+            $intervals = ['' => get_string('syncinterval_custom', 'local_credentium')] + $intervals;
+        }
+        $mform->addElement('select', 'syncinterval', get_string('syncinterval', 'local_credentium'), $intervals);
+        $mform->setType('syncinterval', PARAM_INT);
+        $mform->addHelpButton('syncinterval', 'syncinterval', 'local_credentium');
+        $mform->hideIf('syncinterval', 'enabled', 'notchecked');
+        $mform->hideIf('syncinterval', 'claimenabled', 'notchecked');
+
+        // Show the reminder banner.
+        $mform->addElement('advcheckbox', 'showbanner', get_string('showbanner', 'local_credentium'));
+        $mform->addHelpButton('showbanner', 'showbanner', 'local_credentium');
+        $mform->setDefault('showbanner', 1);
+        $mform->hideIf('showbanner', 'enabled', 'notchecked');
+        $mform->hideIf('showbanner', 'claimenabled', 'notchecked');
+
+        // Diagnostics and data retention.
+        $mform->addElement('header', 'maintenancesettings', get_string('maintenance_heading', 'local_credentium'));
+        $mform->setExpanded('maintenancesettings', true);
+
         // Debug logging.
         $mform->addElement('checkbox', 'debuglog', get_string('debuglog', 'local_credentium'));
         $mform->addHelpButton('debuglog', 'debuglog', 'local_credentium');
@@ -161,6 +198,11 @@ $config->enabled = get_config('local_credentium', 'enabled');
 $config->apiurl = get_config('local_credentium', 'apiurl');
 $config->apikey = get_config('local_credentium', 'apikey');
 $config->categorymode = get_config('local_credentium', 'categorymode');
+$config->claimenabled = get_config('local_credentium', 'claimenabled');
+// Same unset-means-on default the banner hook applies at render time.
+$config->showbanner = local_credentium_show_banner() ? 1 : 0;
+// Null means the cron schedule was hand-edited; '' selects the "custom" option.
+$config->syncinterval = local_credentium_get_claim_sync_interval() ?? '';
 $config->debuglog = get_config('local_credentium', 'debuglog');
 $config->dataretention = get_config('local_credentium', 'dataretention');
 // Set default if not configured yet.
@@ -179,6 +221,12 @@ if ($mform->is_cancelled()) {
     set_config('apiurl', !empty($data->apiurl) ? trim($data->apiurl) : '', 'local_credentium');
     set_config('apikey', !empty($data->apikey) ? $data->apikey : '', 'local_credentium');
     set_config('categorymode', !empty($data->categorymode) ? 1 : 0, 'local_credentium');
+    set_config('claimenabled', !empty($data->claimenabled) ? 1 : 0, 'local_credentium');
+    set_config('showbanner', !empty($data->showbanner) ? 1 : 0, 'local_credentium');
+    // An empty interval means "leave the hand-edited cron schedule alone".
+    if (!empty($data->syncinterval)) {
+        local_credentium_apply_claim_sync_interval((int) $data->syncinterval);
+    }
     set_config('debuglog', !empty($data->debuglog) ? 1 : 0, 'local_credentium');
     set_config('dataretention', !empty($data->dataretention) ? (int)$data->dataretention : 365 * DAYSECS, 'local_credentium');
 
@@ -195,5 +243,15 @@ if ($mform->is_cancelled()) {
 
 // Output page.
 echo $OUTPUT->header();
+
+// The claim feature is built in since v3.0.0; a still-installed legacy Claim plugin
+// was disabled by the upgrade, but only uninstalling it removes its dormant copy.
+if (file_exists($CFG->dirroot . '/local/credentiumclaim/version.php')) {
+    echo $OUTPUT->notification(
+        get_string('uninstalllegacyclaim', 'local_credentium'),
+        \core\output\notification::NOTIFY_WARNING
+    );
+}
+
 echo $mform->render();
 echo $OUTPUT->footer();
