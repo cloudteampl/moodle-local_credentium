@@ -35,7 +35,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2025 CloudTeam Sp. z o.o.
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider_test extends \core_privacy\tests\provider_testcase {
+class privacy_provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
      * Test getting the context for the user ID related to this plugin.
