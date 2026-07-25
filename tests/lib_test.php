@@ -58,6 +58,46 @@ class lib_test extends \advanced_testcase {
     }
 
     /**
+     * The global API key must be stored encrypted and read back decrypted.
+     */
+    public function test_global_apikey_round_trip() {
+        $this->resetAfterTest();
+
+        local_credentium_set_global_apikey('pub.secret-123');
+
+        // At rest the config value must not be the plain key (encryption is
+        // available under PHPUnit; production falls back to plain text only
+        // when \core\encryption cannot operate at all).
+        $this->assertNotEquals('pub.secret-123', get_config('local_credentium', 'apikey'));
+        $this->assertEquals('pub.secret-123', local_credentium_get_global_apikey());
+    }
+
+    /**
+     * A plain-text key stored by a pre-3.0.1 version must still be readable.
+     */
+    public function test_global_apikey_plaintext_fallback() {
+        $this->resetAfterTest();
+
+        // Simulate the legacy storage format: raw set_config, no encryption.
+        set_config('apikey', 'legacy-plain-key', 'local_credentium');
+
+        $this->assertEquals('legacy-plain-key', local_credentium_get_global_apikey());
+    }
+
+    /**
+     * Clearing the key must not store an encrypted empty string.
+     */
+    public function test_global_apikey_clear() {
+        $this->resetAfterTest();
+
+        local_credentium_set_global_apikey('pub.secret');
+        local_credentium_set_global_apikey('');
+
+        $this->assertEquals('', get_config('local_credentium', 'apikey'));
+        $this->assertEquals('', local_credentium_get_global_apikey());
+    }
+
+    /**
      * Test category config save and get.
      */
     public function test_category_config() {

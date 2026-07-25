@@ -43,8 +43,10 @@ class client {
      * @param int|null $categoryid Category ID for cache isolation (null = global cache)
      */
     public function __construct($apiurl = null, $apikey = null, $categoryid = null) {
+        require_once(__DIR__ . '/../../lib.php');
         $this->apiurl = $apiurl ?: get_config('local_credentium', 'apiurl');
-        $this->apikey = $apikey ?: get_config('local_credentium', 'apikey');
+        // The stored global key is encrypted at rest; the accessor decrypts it.
+        $this->apikey = $apikey ?: local_credentium_get_global_apikey();
         $this->categoryid = $categoryid;
 
         // Validate API URL

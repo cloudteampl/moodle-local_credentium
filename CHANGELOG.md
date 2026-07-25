@@ -5,6 +5,27 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-07-25
+
+### Security
+- **The global API key is now encrypted at rest**, like the per-category keys
+  always were. New accessors (`local_credentium_get_global_apikey()` /
+  `local_credentium_set_global_apikey()`) encapsulate the encryption; every
+  reader (issue client, claim client, credential resolution, test connection,
+  settings page) goes through them. The upgrade re-saves an existing key in
+  encrypted form; a plain-text key stored by an older version keeps working
+  either way thanks to the transparent decrypt fallback.
+
+### Changed
+- Moodle Code Checker (phpcs) and PHPDoc checker are now **blocking** in CI
+  (previously advisory); the whole codebase was brought into conformance.
+- The separate Credentium® Claim repository has been archived; its README and
+  final release point here.
+
+### Fixed
+- Local package builds no longer risk including Claude Code session data
+  (`.claude/` is excluded from the ZIP and gitignored).
+
 ## [3.0.0] - 2026-07-25
 
 ### Added

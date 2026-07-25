@@ -66,6 +66,7 @@ rsync -a \
     --exclude='.github' \
     --exclude='.DS_Store' \
     --exclude='._*' \
+    --exclude='.claude' \
     --exclude='.idea' \
     --exclude='.vscode' \
     --exclude='deploy.sh' \

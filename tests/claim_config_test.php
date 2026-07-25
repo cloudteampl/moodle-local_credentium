@@ -78,6 +78,20 @@ final class claim_config_test extends \advanced_testcase {
         $this->assertTrue(claim_config::is_configured());
     }
 
+    public function test_global_credentials_decrypt_an_encrypted_stored_key(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/local/credentium/lib.php');
+
+        set_config('apiurl', 'https://issuer.example.com/api', 'local_credentium');
+        // Stored encrypted at rest since v3.0.1; consumers must see the plain key.
+        local_credentium_set_global_apikey('pub.secret');
+
+        $credentials = claim_config::global_credentials();
+
+        $this->assertNotNull($credentials);
+        $this->assertSame('pub.secret', $credentials->apikey);
+    }
+
     public function test_incomplete_credentials_resolve_to_null(): void {
         set_config('apiurl', 'https://issuer.example.com/api', 'local_credentium');
         set_config('apikey', '', 'local_credentium');

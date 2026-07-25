@@ -200,7 +200,7 @@ $mform = new local_credentium_admin_settings_form();
 $config = new stdClass();
 $config->enabled = get_config('local_credentium', 'enabled');
 $config->apiurl = get_config('local_credentium', 'apiurl');
-$config->apikey = get_config('local_credentium', 'apikey');
+$config->apikey = local_credentium_get_global_apikey();
 $config->categorymode = get_config('local_credentium', 'categorymode');
 $config->claimenabled = get_config('local_credentium', 'claimenabled');
 // Same unset-means-on default the banner hook applies at render time.
@@ -223,7 +223,7 @@ if ($mform->is_cancelled()) {
     // Save settings
     set_config('enabled', !empty($data->enabled) ? 1 : 0, 'local_credentium');
     set_config('apiurl', !empty($data->apiurl) ? trim($data->apiurl) : '', 'local_credentium');
-    set_config('apikey', !empty($data->apikey) ? $data->apikey : '', 'local_credentium');
+    local_credentium_set_global_apikey(!empty($data->apikey) ? $data->apikey : '');
     set_config('categorymode', !empty($data->categorymode) ? 1 : 0, 'local_credentium');
     set_config('claimenabled', !empty($data->claimenabled) ? 1 : 0, 'local_credentium');
     set_config('showbanner', !empty($data->showbanner) ? 1 : 0, 'local_credentium');

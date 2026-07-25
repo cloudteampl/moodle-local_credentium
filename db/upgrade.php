@@ -31,8 +31,8 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool Always returns true
  */
 function xmldb_local_credentium_upgrade($oldversion) {
-    global $DB;
-    
+    global $CFG, $DB;
+
     $dbman = $DB->get_manager();
     
     if ($oldversion < 2025012900) {
@@ -285,6 +285,27 @@ function xmldb_local_credentium_upgrade($oldversion) {
         // version, so there is nothing stale to invalidate.
 
         upgrade_plugin_savepoint(true, 2026072500, 'local', 'credentium');
+    }
+
+    if ($oldversion < 2026072501) {
+        // Version 3.0.1: the global API key is now stored encrypted at rest,
+        // like the per-category keys always were. Re-save the existing value
+        // through the decrypt-then-encrypt round trip: a plain-text key from
+        // older versions passes through decrypt unchanged and comes out
+        // encrypted, while an already-encrypted value (upgrade re-run) is
+        // simply re-encrypted. Readers decrypt via the accessor with a
+        // plain-text fallback, so no window exists where the key is unusable.
+        require_once($CFG->dirroot . '/local/credentium/lib.php');
+        $raw = get_config('local_credentium', 'apikey');
+        if ($raw !== false && $raw !== '') {
+            set_config(
+                'apikey',
+                local_credentium_encrypt_key(local_credentium_decrypt_key($raw)),
+                'local_credentium'
+            );
+        }
+
+        upgrade_plugin_savepoint(true, 2026072501, 'local', 'credentium');
     }
 
     return true;

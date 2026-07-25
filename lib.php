@@ -178,6 +178,34 @@ function local_credentium_decrypt_key($encryptedkey) {
 }
 
 /**
+ * The global Credentium API key, decrypted for use.
+ *
+ * Stored encrypted at rest since v3.0.1. Values saved as plain text by older
+ * versions are returned unchanged (decryption falls back transparently), so the
+ * accessor is safe to use before and after the migration.
+ *
+ * @return string Plain text API key ('' when not configured).
+ */
+function local_credentium_get_global_apikey() {
+    $stored = (string) get_config('local_credentium', 'apikey');
+    if ($stored === '') {
+        return '';
+    }
+    return local_credentium_decrypt_key($stored);
+}
+
+/**
+ * Store the global Credentium API key, encrypted at rest.
+ *
+ * @param string $apikey Plain text API key ('' clears it).
+ * @return void
+ */
+function local_credentium_set_global_apikey($apikey) {
+    $apikey = trim((string) $apikey);
+    set_config('apikey', $apikey === '' ? '' : local_credentium_encrypt_key($apikey), 'local_credentium');
+}
+
+/**
  * Get category configuration for Credentium.
  *
  * @param int $categoryid The category ID
@@ -253,7 +281,7 @@ function local_credentium_resolve_category_config($courseid) {
         $globalconfig = (object)[
             'categoryid' => null,
             'apiurl' => get_config('local_credentium', 'apiurl'),
-            'apikey' => get_config('local_credentium', 'apikey'),
+            'apikey' => local_credentium_get_global_apikey(),
             'paused' => 0,
             'ratelimit' => null,
             'enabled' => get_config('local_credentium', 'enabled'),
@@ -288,7 +316,7 @@ function local_credentium_resolve_category_config($courseid) {
         $result = (object)[
             'categoryid' => null,
             'apiurl' => get_config('local_credentium', 'apiurl'),
-            'apikey' => get_config('local_credentium', 'apikey'),
+            'apikey' => local_credentium_get_global_apikey(),
             'paused' => 0,
             'ratelimit' => null,
             'enabled' => get_config('local_credentium', 'enabled'),
@@ -332,7 +360,7 @@ function local_credentium_resolve_category_config($courseid) {
                 $result = (object)[
                     'categoryid' => $category->id,
                     'apiurl' => get_config('local_credentium', 'apiurl'),
-                    'apikey' => get_config('local_credentium', 'apikey'),
+                    'apikey' => local_credentium_get_global_apikey(),
                     'paused' => $catconfig->paused ?? 0,
                     'ratelimit' => $catconfig->ratelimit ?? null,
                     'enabled' => 1,
@@ -360,7 +388,7 @@ function local_credentium_resolve_category_config($courseid) {
     $result = (object)[
         'categoryid' => null,
         'apiurl' => get_config('local_credentium', 'apiurl'),
-        'apikey' => get_config('local_credentium', 'apikey'),
+        'apikey' => local_credentium_get_global_apikey(),
         'paused' => 0,
         'ratelimit' => null,
         'enabled' => get_config('local_credentium', 'enabled'),

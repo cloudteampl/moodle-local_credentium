@@ -67,9 +67,9 @@ if ($categoryid) {
         die();
     }
 } else {
-    // Get global credentials
+    // Get global credentials (the stored key is encrypted at rest).
     $apiurl = get_config('local_credentium', 'apiurl');
-    $apikey = get_config('local_credentium', 'apikey');
+    $apikey = local_credentium_get_global_apikey();
     $source = get_string('testconnection_global_config', 'local_credentium');
 }
 
