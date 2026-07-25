@@ -648,6 +648,29 @@ function local_credentium_claim_run_error_message() {
 }
 
 /**
+ * Tab row linking the two Credentium admin reports.
+ *
+ * @param string $current Active tab: 'issuances' or 'claims'.
+ * @return string Rendered tab tree.
+ */
+function local_credentium_report_tabs(string $current): string {
+    global $OUTPUT;
+    $tabs = [
+        new tabobject(
+            'issuances',
+            new moodle_url('/local/credentium/index.php'),
+            get_string('report', 'local_credentium')
+        ),
+        new tabobject(
+            'claims',
+            new moodle_url('/local/credentium/claimreport.php'),
+            get_string('claimreport', 'local_credentium')
+        ),
+    ];
+    return $OUTPUT->tabtree($tabs, $current);
+}
+
+/**
  * Add a "My credentials" node to the user's own profile page.
  *
  * @param \core_user\output\myprofile\tree $tree The profile tree.
