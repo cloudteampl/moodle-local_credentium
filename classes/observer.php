@@ -175,6 +175,10 @@ class observer {
                 ]);
             }
         }
+
+        // Remove the user's claim tracking rows too, and drop their cached counts.
+        $DB->delete_records(\local_credentium\local\claimable::TABLE, ['userid' => $userid]);
+        \local_credentium\local\claimable::purge_cache((int) $userid);
     }
 
 }
