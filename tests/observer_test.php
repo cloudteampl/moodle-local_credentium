@@ -37,12 +37,13 @@ require_once($CFG->dirroot . '/local/credentium/lib.php');
  * @category   test
  * @copyright  2025 CloudTeam Sp. z o.o.
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_credentium\observer
  */
-class observer_test extends \advanced_testcase {
+final class observer_test extends \advanced_testcase {
     /**
      * Test course completion observer creates issuance record.
      */
-    public function test_course_completed_creates_issuance() {
+    public function test_course_completed_creates_issuance(): void {
         global $DB;
         $this->resetAfterTest();
 
@@ -91,7 +92,7 @@ class observer_test extends \advanced_testcase {
     /**
      * Test observer does nothing when plugin disabled.
      */
-    public function test_observer_disabled_plugin() {
+    public function test_observer_disabled_plugin(): void {
         global $DB;
         $this->resetAfterTest();
 
@@ -125,7 +126,7 @@ class observer_test extends \advanced_testcase {
     /**
      * Test observer does nothing when course not configured.
      */
-    public function test_observer_course_not_configured() {
+    public function test_observer_course_not_configured(): void {
         global $DB;
         $this->resetAfterTest();
 

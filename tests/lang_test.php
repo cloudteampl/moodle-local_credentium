@@ -37,8 +37,9 @@ namespace local_credentium;
  * @category   test
  * @copyright  2025 CloudTeam Sp. z o.o.
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @coversNothing
  */
-class lang_test extends \advanced_testcase {
+final class lang_test extends \advanced_testcase {
     /** @var string[] Languages the plugin ships. English is the reference. */
     private const LANGS = ['en', 'pl'];
 
