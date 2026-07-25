@@ -23,6 +23,7 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/lib.php');
 
 $id = required_param('id', PARAM_INT);
 
@@ -92,7 +93,8 @@ if ($issuance->status === 'issued' && $issuance->credentialid) {
             ));
         }
     } catch (Exception $e) {
-        // Silently fail if API is not available.
+        // The external link is a nice-to-have: render the page without it.
+        local_credentium_log('Could not fetch credential details for view', ['error' => $e->getMessage()]);
     }
 }
 

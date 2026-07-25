@@ -70,20 +70,20 @@ if ($action === 'retry' && $id) {
         );
     }
 
-    // Smart retry: Refresh grade if NULL and sendgrade is enabled
+    // Smart retry: Refresh grade if NULL and sendgrade is enabled.
     $courseconfig = local_credentium_get_course_config($issuance->courseid);
     $sendgrade = $courseconfig && !empty($courseconfig->sendgrade);
     $grademessage = '';
 
     if ($sendgrade && is_null($issuance->grade)) {
-        // Attempt to fetch grade from gradebook
+        // Attempt to fetch grade from gradebook.
         require_once($CFG->libdir . '/gradelib.php');
         require_once($CFG->dirroot . '/grade/querylib.php');
-        $course_grade = \grade_get_course_grade($issuance->userid, $issuance->courseid);
+        $coursegrade = \grade_get_course_grade($issuance->userid, $issuance->courseid);
 
-        if ($course_grade && isset($course_grade->grade)) {
-            $issuance->grade = $course_grade->grade;
-            $grademessage = " Grade refreshed: {$course_grade->grade}.";
+        if ($coursegrade && isset($coursegrade->grade)) {
+            $issuance->grade = $coursegrade->grade;
+            $grademessage = " Grade refreshed: {$coursegrade->grade}.";
         } else {
             $grademessage = " Warning: Grade still not available.";
         }
@@ -114,14 +114,19 @@ echo local_credentium_report_tabs('issuances');
     // Add buttons for processing credentials and refreshing the page.
     echo html_writer::start_div('mb-3');
 
-    // Check if there are pending or retrying credentials
+    // Check if there are pending or retrying credentials.
     $pendingcount = $DB->count_records_select(
         'local_credentium_issuances',
         "status IN ('pending', 'retrying')"
     );
     if ($pendingcount > 0) {
         $processurl = new moodle_url('/local/credentium/process.php', ['sesskey' => sesskey()]);
-        echo $OUTPUT->single_button($processurl, get_string('processpending', 'local_credentium', $pendingcount), 'post', ['class' => 'btn btn-primary']);
+        echo $OUTPUT->single_button(
+            $processurl,
+            get_string('processpending', 'local_credentium', $pendingcount),
+            'post',
+            ['class' => 'btn btn-primary']
+        );
     }
 
     $refreshurl = new moodle_url($PAGE->url);
@@ -129,11 +134,13 @@ echo local_credentium_report_tabs('issuances');
 
     echo html_writer::end_div();
 
-    // Add filter form
+    // Add filter form.
     echo html_writer::start_tag('form', ['method' => 'get', 'action' => $PAGE->url, 'class' => 'form-inline mb-3']);
-    echo html_writer::start_div('', ['style' => 'display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px;']);
+    echo html_writer::start_div('', [
+        'style' => 'display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px;',
+    ]);
 
-    // Status filter
+    // Status filter.
     echo html_writer::start_div('');
     echo html_writer::label(get_string('status', 'local_credentium') . ': ', 'filter', true, ['class' => 'mr-2']);
     $statusoptions = [
@@ -146,11 +153,11 @@ echo local_credentium_report_tabs('issuances');
     echo html_writer::select($statusoptions, 'filter', $filter, null, ['class' => 'form-control']);
     echo html_writer::end_div();
 
-    // Course filter
+    // Course filter.
     echo html_writer::start_div('');
     echo html_writer::label(get_string('course') . ': ', 'courseid', true, ['class' => 'mr-2']);
     $courses = $DB->get_records_sql("
-    SELECT DISTINCT c.id, c.fullname 
+    SELECT DISTINCT c.id, c.fullname
     FROM {course} c
     JOIN {local_credentium_issuances} lci ON lci.courseid = c.id
     ORDER BY c.fullname
@@ -160,7 +167,7 @@ echo local_credentium_report_tabs('issuances');
     foreach ($courses as $course) {
         $courseoptions[$course->id] = $course->fullname;
     }
-    // If current courseid is not in the list, add it
+    // If current courseid is not in the list, add it.
     if ($courseid && !isset($courseoptions[$courseid])) {
         $currentcourse = $DB->get_record('course', ['id' => $courseid]);
         if ($currentcourse) {
@@ -170,7 +177,7 @@ echo local_credentium_report_tabs('issuances');
     echo html_writer::select($courseoptions, 'courseid', $courseid, null, ['class' => 'form-control']);
     echo html_writer::end_div();
 
-    // Search box
+    // Search box.
     echo html_writer::start_div('');
     echo html_writer::label(get_string('search') . ': ', 'search', true, ['class' => 'mr-2']);
     echo html_writer::empty_tag('input', [
@@ -183,7 +190,7 @@ echo local_credentium_report_tabs('issuances');
     ]);
     echo html_writer::end_div();
 
-    // Submit buttons
+    // Submit buttons.
     echo html_writer::start_div('');
     echo html_writer::tag('button', get_string('filter'), ['type' => 'submit', 'class' => 'btn btn-primary']);
     echo ' ';
@@ -193,11 +200,11 @@ echo local_credentium_report_tabs('issuances');
     echo html_writer::end_div();
     echo html_writer::end_tag('form');
 
-    // Create and setup table
+    // Create and setup table.
     $table = new flexible_table('local-credentium-report');
     $table->define_baseurl($PAGE->url);
 
-    // Define table columns and headers
+    // Define table columns and headers.
     $columns = ['user', 'course', 'template', 'status', 'grade', 'timecreated', 'actions'];
     $headers = [
     get_string('user'),
@@ -217,14 +224,14 @@ echo local_credentium_report_tabs('issuances');
     $table->pageable(true);
     $table->setup();
 
-    $select = "lci.id, lci.userid, lci.courseid, lci.templateid, lci.status, lci.grade, lci.timecreated, 
+    $select = "lci.id, lci.userid, lci.courseid, lci.templateid, lci.status, lci.grade, lci.timecreated,
            lci.timemodified, lci.attempts, lci.errorcode, lci.errormessage, lci.credentialid,
            u.firstname, u.lastname, u.email, c.fullname as coursename";
     $from = "{local_credentium_issuances} lci JOIN {user} u ON u.id = lci.userid JOIN {course} c ON c.id = lci.courseid";
     $where = "1=1";
     $params = [];
 
-    // Apply filters
+    // Apply filters.
     if (!empty($filter)) {
         $where .= " AND lci.status = :status";
         $params['status'] = $filter;
@@ -241,7 +248,7 @@ echo local_credentium_report_tabs('issuances');
     }
 
     if (!empty($search)) {
-        // Use CONCAT for cross-database compatibility
+        // Use CONCAT for cross-database compatibility.
         $searchsql = $DB->sql_like($DB->sql_concat('u.firstname', "' '", 'u.lastname'), ':search1', false, false) . " OR " .
                  $DB->sql_like('u.firstname', ':search2', false, false) . " OR " .
                  $DB->sql_like('u.lastname', ':search3', false, false) . " OR " .
@@ -257,17 +264,17 @@ echo local_credentium_report_tabs('issuances');
     $totalcount = $DB->count_records_sql("SELECT COUNT(*) FROM $from WHERE $where", $params);
     $table->pagesize($perpage, $totalcount);
 
-    // Build sort SQL safely
+    // Build sort SQL safely.
     $sort = $table->get_sql_sort();
 
-    // Map column names to their SQL aliases for security
+    // Map column names to their SQL aliases for security.
     if (!empty($sort)) {
-        // Parse the sort string to extract column and direction
+        // Parse the sort string to extract column and direction.
         $sortparts = explode(' ', trim($sort));
         $sortcolumn = $sortparts[0] ?? '';
         $sortdirection = $sortparts[1] ?? 'ASC';
 
-        // Whitelist of allowed sort columns with their SQL aliases
+        // Whitelist of allowed sort columns with their SQL aliases.
         $sortablecolumns = [
         'user' => 'u.lastname',
         'course' => 'c.fullname',
@@ -277,7 +284,7 @@ echo local_credentium_report_tabs('issuances');
         'timecreated' => 'lci.timecreated',
         ];
 
-        // Build ORDER BY clause with whitelisted columns only
+        // Build ORDER BY clause with whitelisted columns only.
         if (isset($sortablecolumns[$sortcolumn])) {
             $sortdirection = ($sortdirection === 'DESC') ? 'DESC' : 'ASC';
             $orderby = " ORDER BY " . $sortablecolumns[$sortcolumn] . " " . $sortdirection;
@@ -293,7 +300,7 @@ echo local_credentium_report_tabs('issuances');
 
     foreach ($records as $record) {
         $row = [];
-        // Create a user object for fullname function
+        // Create a user object for fullname function.
         $userobj = new \stdClass();
         $userobj->firstname = $record->firstname;
         $userobj->lastname = $record->lastname;
@@ -301,7 +308,7 @@ echo local_credentium_report_tabs('issuances');
         $row[] = html_writer::link(new moodle_url('/course/view.php', ['id' => $record->courseid]), $record->coursename);
         $row[] = $record->templateid;
 
-        // Status with error info
+        // Status with error info.
         $statustext = get_string('status_' . $record->status, 'local_credentium');
         if (($record->status === 'failed' || $record->status === 'retrying') && !empty($record->errormessage)) {
             $statustext .= ' ' . html_writer::tag('i', '', [
@@ -320,10 +327,12 @@ echo local_credentium_report_tabs('issuances');
         $actions = [];
         if ($record->status === 'failed' || $record->status === 'pending' || $record->status === 'retrying') {
             $retryurl = new moodle_url($PAGE->url, ['action' => 'retry', 'id' => $record->id, 'sesskey' => sesskey()]);
-            $actions[] = html_writer::link($retryurl, get_string('retry', 'local_credentium'), ['class' => 'btn btn-sm btn-warning']);
+            $actions[] = html_writer::link($retryurl, get_string('retry', 'local_credentium'), [
+                'class' => 'btn btn-sm btn-warning',
+            ]);
         }
 
-        // Add debug link for all records
+        // Add debug link for all records.
         $debugurl = new moodle_url('/local/credentium/debug.php', ['id' => $record->id]);
         $actions[] = html_writer::link($debugurl, 'Debug', ['class' => 'btn btn-sm btn-info']);
 
@@ -334,9 +343,9 @@ echo local_credentium_report_tabs('issuances');
 
     $table->print_html();
 
-    // Show summary statistics - need to use the same FROM clause as the main query
+    // Show summary statistics - need to use the same FROM clause as the main query.
     $stats = $DB->get_record_sql("
-    SELECT 
+    SELECT
         COUNT(*) as total,
         SUM(CASE WHEN lci.status = 'issued' THEN 1 ELSE 0 END) as issued,
         SUM(CASE WHEN lci.status = 'pending' THEN 1 ELSE 0 END) as pending,
@@ -350,25 +359,25 @@ echo local_credentium_report_tabs('issuances');
     echo html_writer::tag('h3', get_string('summary', 'local_credentium'));
     echo html_writer::start_div('', ['style' => 'display: flex; justify-content: space-around; text-align: center;']);
 
-    // Total
+    // Total.
     echo html_writer::start_div('');
     echo html_writer::tag('h3', $stats->total ?? 0);
     echo html_writer::tag('p', get_string('total'));
     echo html_writer::end_div();
 
-    // Issued
+    // Issued.
     echo html_writer::start_div('');
     echo html_writer::tag('h3', $stats->issued ?? 0, ['style' => 'color: #28a745;']);
     echo html_writer::tag('p', get_string('status_issued', 'local_credentium'));
     echo html_writer::end_div();
 
-    // Pending + Retrying
+    // Pending + Retrying.
     echo html_writer::start_div('');
     echo html_writer::tag('h3', ($stats->pending ?? 0) + ($stats->retrying ?? 0), ['style' => 'color: #ffc107;']);
     echo html_writer::tag('p', get_string('inprogress', 'local_credentium'));
     echo html_writer::end_div();
 
-    // Failed
+    // Failed.
     echo html_writer::start_div('');
     echo html_writer::tag('h3', $stats->failed ?? 0, ['style' => 'color: #dc3545;']);
     echo html_writer::tag('p', get_string('status_failed', 'local_credentium'));

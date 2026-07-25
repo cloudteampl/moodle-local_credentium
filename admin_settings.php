@@ -41,6 +41,11 @@ $PAGE->set_heading(get_string('globalsettings', 'local_credentium'));
  * Global settings form.
  */
 class local_credentium_admin_settings_form extends moodleform {
+    /**
+     * Form definition.
+     *
+     * @return void
+     */
     public function definition() {
         $mform = $this->_form;
 
@@ -89,12 +94,12 @@ class local_credentium_admin_settings_form extends moodleform {
         $mform->hideIf('apikey', 'enabled', 'notchecked');
 
         // Check if API credentials are saved in the database.
-        $saved_apiurl = get_config('local_credentium', 'apiurl');
-        $saved_apikey = get_config('local_credentium', 'apikey');
-        $credentials_saved = !empty($saved_apiurl) && !empty($saved_apikey);
+        $savedapiurl = get_config('local_credentium', 'apiurl');
+        $savedapikey = get_config('local_credentium', 'apikey');
+        $credentialssaved = !empty($savedapiurl) && !empty($savedapikey);
 
         // Test connection button.
-        if ($credentials_saved) {
+        if ($credentialssaved) {
             $testurl = new moodle_url('/local/credentium/testconnection.php', ['sesskey' => sesskey()]);
             $onclick = "window.open('{$testurl->out(false)}', '_blank'); return false;";
             $mform->addElement(
@@ -175,13 +180,20 @@ class local_credentium_admin_settings_form extends moodleform {
             ['optional' => false, 'defaultunit' => DAYSECS, 'units' => [DAYSECS, WEEKSECS]]
         );
         $mform->addHelpButton('dataretention', 'dataretention', 'local_credentium');
-        $mform->setDefault('dataretention', 365 * DAYSECS); // Default: 365 days
+        $mform->setDefault('dataretention', 365 * DAYSECS); // Default: 365 days.
         $mform->hideIf('dataretention', 'enabled', 'notchecked');
 
         // Action buttons.
         $this->add_action_buttons(true, get_string('savechanges'));
     }
 
+    /**
+     * Server-side validation.
+     *
+     * @param array $data Submitted data.
+     * @param array $files Submitted files.
+     * @return array Field name => error message map.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
@@ -191,19 +203,19 @@ class local_credentium_admin_settings_form extends moodleform {
             $categorymode = !empty($data['categorymode']);
 
             if (!$categorymode) {
-                // Validate API URL (required when not using category mode)
+                // Validate API URL (required when not using category mode).
                 if (empty($data['apiurl'])) {
                     $errors['apiurl'] = get_string('required');
                 } else if (!filter_var($data['apiurl'], FILTER_VALIDATE_URL)) {
                     $errors['apiurl'] = get_string('error:invalidapiurl', 'local_credentium');
                 }
 
-                // Validate API Key (required when not using category mode)
+                // Validate API Key (required when not using category mode).
                 if (empty($data['apikey'])) {
                     $errors['apikey'] = get_string('required');
                 }
             } else {
-                // When category mode is enabled, validate URL format if provided (but not required)
+                // When category mode is enabled, validate URL format if provided (but not required).
                 if (!empty($data['apiurl']) && !filter_var($data['apiurl'], FILTER_VALIDATE_URL)) {
                     $errors['apiurl'] = get_string('error:invalidapiurl', 'local_credentium');
                 }
@@ -241,7 +253,7 @@ $mform->set_data($config);
 if ($mform->is_cancelled()) {
     redirect(new moodle_url('/admin/plugins.php', ['subtype' => 'local']));
 } else if ($data = $mform->get_data()) {
-    // Save settings
+    // Save settings.
     set_config('enabled', !empty($data->enabled) ? 1 : 0, 'local_credentium');
     set_config('apiurl', !empty($data->apiurl) ? trim($data->apiurl) : '', 'local_credentium');
     local_credentium_set_global_apikey(!empty($data->apikey) ? $data->apikey : '');
@@ -255,7 +267,7 @@ if ($mform->is_cancelled()) {
     set_config('debuglog', !empty($data->debuglog) ? 1 : 0, 'local_credentium');
     set_config('dataretention', !empty($data->dataretention) ? (int)$data->dataretention : 365 * DAYSECS, 'local_credentium');
 
-    // Clear caches
+    // Clear caches.
     cache_helper::purge_by_definition('core', 'config');
 
     redirect(

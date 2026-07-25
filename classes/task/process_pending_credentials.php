@@ -24,8 +24,6 @@
 
 namespace local_credentium\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Scheduled task to process pending credentials.
  */
@@ -51,7 +49,7 @@ class process_pending_credentials extends \core\task\scheduled_task {
         }
 
         // Get pending credentials (limit to prevent timeout)
-        // Only fetch required columns for better performance
+        // Only fetch required columns for better performance.
         $pendingissuances = $DB->get_records(
             'local_credentium_issuances',
             ['status' => 'pending'],
@@ -69,7 +67,7 @@ class process_pending_credentials extends \core\task\scheduled_task {
         mtrace('Processing ' . count($pendingissuances) . ' pending credential(s)...');
 
         foreach ($pendingissuances as $issuance) {
-            // Queue an ad-hoc task for each pending credential
+            // Queue an ad-hoc task for each pending credential.
             $task = new issue_credential();
             $task->set_custom_data(['issuanceid' => $issuance->id]);
             \core\task\manager::queue_adhoc_task($task);

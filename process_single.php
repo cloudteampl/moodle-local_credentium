@@ -38,7 +38,7 @@ $PAGE->set_heading('Process Single Credential');
 
 echo $OUTPUT->header();
 
-// Get the issuance
+// Get the issuance.
 $issuance = $DB->get_record('local_credentium_issuances', ['id' => $id]);
 if (!$issuance) {
     echo $OUTPUT->notification('Issuance not found', 'error');
@@ -48,7 +48,7 @@ if (!$issuance) {
 
 echo html_writer::tag('h3', 'Processing Credential Issuance #' . $id);
 
-// Smart retry: Refresh grade if NULL and sendgrade is enabled
+// Smart retry: Refresh grade if NULL and sendgrade is enabled.
 require_once(__DIR__ . '/lib.php');
 $courseconfig = local_credentium_get_course_config($issuance->courseid);
 $sendgrade = $courseconfig && !empty($courseconfig->sendgrade);
@@ -56,39 +56,42 @@ $sendgrade = $courseconfig && !empty($courseconfig->sendgrade);
 if ($sendgrade && is_null($issuance->grade)) {
     echo html_writer::tag('p', 'Attempting to refresh grade from gradebook...');
 
-    // Attempt to fetch grade from gradebook
+    // Attempt to fetch grade from gradebook.
     require_once($CFG->libdir . '/gradelib.php');
     require_once($CFG->dirroot . '/grade/querylib.php');
-    $course_grade = \grade_get_course_grade($issuance->userid, $issuance->courseid);
+    $coursegrade = \grade_get_course_grade($issuance->userid, $issuance->courseid);
 
-    if ($course_grade && isset($course_grade->grade)) {
-        $issuance->grade = $course_grade->grade;
+    if ($coursegrade && isset($coursegrade->grade)) {
+        $issuance->grade = $coursegrade->grade;
         $issuance->timemodified = time();
         $DB->update_record('local_credentium_issuances', $issuance);
-        echo $OUTPUT->notification("Grade refreshed from gradebook: {$course_grade->grade}", 'success');
+        echo $OUTPUT->notification("Grade refreshed from gradebook: {$coursegrade->grade}", 'success');
     } else {
         echo $OUTPUT->notification('Warning: Grade still not available in gradebook', 'warning');
     }
 }
 
-// Create and execute the task directly
+// Create and execute the task directly.
 $task = new \local_credentium\task\issue_credential();
 $task->set_custom_data(['issuanceid' => $issuance->id]);
 
 echo html_writer::tag('p', 'Executing task for issuance ID: ' . $issuance->id);
 
-// Capture mtrace output
+// Capture mtrace output.
 ob_start();
 
-// Execute the task directly
+// Execute the task directly.
 try {
     $task->execute();
     $output = ob_get_clean();
 
     echo html_writer::tag('h4', 'Task Output', ['class' => 'mt-3']);
-    echo html_writer::tag('pre', s($output), ['class' => 'border p-3 bg-light', 'style' => 'max-height: 400px; overflow-y: auto;']);
+    echo html_writer::tag('pre', s($output), [
+            'class' => 'border p-3 bg-light',
+            'style' => 'max-height: 400px; overflow-y: auto;',
+        ]);
 
-    // Check if output contains errors to determine actual success
+    // Check if output contains errors to determine actual success.
     if (stripos($output, 'ERROR:') !== false || stripos($output, 'Error issuing') !== false) {
         echo $OUTPUT->notification('Task completed but credential issuance failed - see output above for details', 'error');
     } else if (stripos($output, 'Successfully issued credential') !== false) {
@@ -100,14 +103,20 @@ try {
     $output = ob_get_clean();
 
     echo html_writer::tag('h4', 'Task Output', ['class' => 'mt-3']);
-    echo html_writer::tag('pre', s($output), ['class' => 'border p-3 bg-light', 'style' => 'max-height: 400px; overflow-y: auto;']);
+    echo html_writer::tag('pre', s($output), [
+            'class' => 'border p-3 bg-light',
+            'style' => 'max-height: 400px; overflow-y: auto;',
+        ]);
 
     echo $OUTPUT->notification('Task execution failed with exception: ' . $e->getMessage(), 'error');
     echo html_writer::tag('h4', 'Exception Details', ['class' => 'mt-3']);
-    echo html_writer::tag('pre', s($e->getTraceAsString()), ['class' => 'border p-3 bg-light', 'style' => 'max-height: 400px; overflow-y: auto;']);
+    echo html_writer::tag('pre', s($e->getTraceAsString()), [
+            'class' => 'border p-3 bg-light',
+            'style' => 'max-height: 400px; overflow-y: auto;',
+        ]);
 }
 
-// Show updated issuance
+// Show updated issuance.
 $updated = $DB->get_record('local_credentium_issuances', ['id' => $id]);
 echo html_writer::tag('h4', 'Updated Status', ['class' => 'mt-4']);
 $table = new html_table();

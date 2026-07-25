@@ -24,9 +24,17 @@
 
 namespace local_credentium;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Event observers: create issuance records on course completion and clean up
+ * plugin data when a user is deleted.
+ */
 class observer {
+    /**
+     * Queue a credential issuance when a learner completes a configured course.
+     *
+     * @param \core\event\course_completed $event The completion event.
+     * @return void
+     */
     public static function course_completed(\core\event\course_completed $event) {
         global $DB, $CFG;
 
@@ -161,7 +169,7 @@ class observer {
             return;
         }
 
-        // Delete all credential issuance records for this user
+        // Delete all credential issuance records for this user.
         $count = $DB->count_records('local_credentium_issuances', ['userid' => $userid]);
 
         if ($count > 0) {

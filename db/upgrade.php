@@ -22,8 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Upgrade function.
  *
@@ -41,9 +39,9 @@ function xmldb_local_credentium_upgrade($oldversion) {
 
     if ($oldversion < 2025012935) {
         // Force refresh of scheduled tasks to register new task
-        // Only reset tasks for our specific component to prevent any potential issues
+        // Only reset tasks for our specific component to prevent any potential issues.
         $component = 'local_credentium';
-        // Validate component name to ensure it's safe
+        // Validate component name to ensure it's safe.
         if ($component === 'local_credentium' && core_component::is_valid_plugin_name('local', 'credentium')) {
             \core\task\manager::reset_scheduled_tasks_for_component($component);
         }
@@ -52,23 +50,23 @@ function xmldb_local_credentium_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025012944) {
-        // Fix database schema for templates cache table
+        // Fix database schema for templates cache table.
         $table = new xmldb_table('local_credentium_templates_cache');
 
-        // Rename metadata field to data
+        // Rename metadata field to data.
         $oldfield = new xmldb_field('metadata', XMLDB_TYPE_TEXT, null, null, null, null, null, 'description');
         $newfield = new xmldb_field('data', XMLDB_TYPE_TEXT, null, null, null, null, null, 'description');
         if ($dbman->field_exists($table, $oldfield)) {
             $dbman->rename_field($table, $oldfield, 'data');
         }
 
-        // Rename timecreated field to timecached
+        // Rename timecreated field to timecached.
         $oldfield2 = new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'active');
         if ($dbman->field_exists($table, $oldfield2)) {
             $dbman->rename_field($table, $oldfield2, 'timecached');
         }
 
-        // Drop timemodified field if it exists
+        // Drop timemodified field if it exists.
         $dropfield = new xmldb_field('timemodified');
         if ($dbman->field_exists($table, $dropfield)) {
             $dbman->drop_field($table, $dropfield);
@@ -78,11 +76,11 @@ function xmldb_local_credentium_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025073135) {
-        // Add sendgrade field to course config table
+        // Add sendgrade field to course config table.
         $table = new xmldb_table('local_credentium_course_config');
         $field = new xmldb_field('sendgrade', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'templateid');
 
-        // Conditionally add field
+        // Conditionally add field.
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
@@ -91,62 +89,62 @@ function xmldb_local_credentium_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025080100) {
-        // Multi-tenant per-category configuration upgrade
+        // Multi-tenant per-category configuration upgrade.
 
-        // Step 1: Add categoryid to issuances table for rate limiting tracking
+        // Step 1: Add categoryid to issuances table for rate limiting tracking.
         $table = new xmldb_table('local_credentium_issuances');
         $field = new xmldb_field('categoryid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'timeissued');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
-        // Add index for categoryid
+        // Add index for categoryid.
         $index = new xmldb_index('categoryid', XMLDB_INDEX_NOTUNIQUE, ['categoryid']);
         if (!$dbman->index_exists($table, $index)) {
             $dbman->add_index($table, $index);
         }
 
-        // Step 2: Add inherit_category to course config table
+        // Step 2: Add inherit_category to course config table.
         $table = new xmldb_table('local_credentium_course_config');
         $field = new xmldb_field('inherit_category', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'issuancetrigger');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
-        // Add index for inherit_category
+        // Add index for inherit_category.
         $index = new xmldb_index('inherit_category', XMLDB_INDEX_NOTUNIQUE, ['inherit_category']);
         if (!$dbman->index_exists($table, $index)) {
             $dbman->add_index($table, $index);
         }
 
-        // Step 3: Modify templates cache for per-category isolation
+        // Step 3: Modify templates cache for per-category isolation.
         $table = new xmldb_table('local_credentium_templates_cache');
 
-        // Drop old templateid unique index
+        // Drop old templateid unique index.
         $oldindex = new xmldb_index('templateid', XMLDB_INDEX_UNIQUE, ['templateid']);
         if ($dbman->index_exists($table, $oldindex)) {
             $dbman->drop_index($table, $oldindex);
         }
 
-        // Add categoryid field
+        // Add categoryid field.
         $field = new xmldb_field('categoryid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'active');
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
-        // Add new composite unique index (templateid + categoryid)
+        // Add new composite unique index (templateid + categoryid).
         $index = new xmldb_index('templateid-categoryid', XMLDB_INDEX_UNIQUE, ['templateid', 'categoryid']);
         if (!$dbman->index_exists($table, $index)) {
             $dbman->add_index($table, $index);
         }
 
-        // Add categoryid index
+        // Add categoryid index.
         $index = new xmldb_index('categoryid', XMLDB_INDEX_NOTUNIQUE, ['categoryid']);
         if (!$dbman->index_exists($table, $index)) {
             $dbman->add_index($table, $index);
         }
 
-        // Step 4: Create category config table
+        // Step 4: Create category config table.
         $table = new xmldb_table('local_credentium_category_config');
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('categoryid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
@@ -168,7 +166,7 @@ function xmldb_local_credentium_upgrade($oldversion) {
             $dbman->create_table($table);
         }
 
-        // Step 5: Clear template cache to force rebuild with new schema
+        // Step 5: Clear template cache to force rebuild with new schema.
         $DB->delete_records('local_credentium_templates_cache');
 
         upgrade_plugin_savepoint(true, 2025080100, 'local', 'credentium');

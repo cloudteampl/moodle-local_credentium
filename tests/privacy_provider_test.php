@@ -25,8 +25,6 @@
 
 namespace local_credentium\privacy;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Privacy provider tests class.
  *

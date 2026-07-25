@@ -25,8 +25,6 @@
 
 namespace local_credentium;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Language pack completeness tests class.
  *
@@ -52,7 +50,7 @@ class lang_test extends \advanced_testcase {
      */
     private const ALLOW_IDENTICAL = [
         'status',
-        // "Status" is the same word in Polish; these label claim-status columns.
+        // The word "Status" is identical in Polish; these label claim-status columns.
         'col_status',
         'report_status',
     ];
@@ -219,7 +217,7 @@ class lang_test extends \advanced_testcase {
             $strings = $this->load_strings($lang);
 
             foreach (array_keys($capabilities) as $capability) {
-                // 'local/credentium:manage' resolves to the 'credentium:manage' string key.
+                // A capability like 'local/credentium:manage' maps onto the 'credentium:manage' string key.
                 $key = substr($capability, strpos($capability, '/') + 1);
                 $this->assertArrayHasKey(
                     $key,

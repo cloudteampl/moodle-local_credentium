@@ -37,7 +37,7 @@ $PAGE->set_heading(get_string('processcredentials', 'local_credentium'));
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('processingcredentials', 'local_credentium'), 3);
 
-// Get all pending and retrying credentials
+// Get all pending and retrying credentials.
 $pendingissuances = $DB->get_records_select(
     'local_credentium_issuances',
     "status IN ('pending', 'retrying')",
@@ -53,7 +53,7 @@ if (empty($pendingissuances)) {
 } else {
     echo html_writer::tag('p', get_string('processingcount', 'local_credentium', count($pendingissuances)));
 
-    // Queue ad-hoc tasks for each pending issuance
+    // Queue ad-hoc tasks for each pending issuance.
     $queuedcount = 0;
     foreach ($pendingissuances as $issuance) {
         $user = $DB->get_record('user', ['id' => $issuance->userid]);
@@ -62,13 +62,13 @@ if (empty($pendingissuances)) {
         echo html_writer::start_div('alert alert-info');
         echo "Queuing credential for " . fullname($user) . " in course " . $course->fullname . "... ";
 
-        // Show previous error if retrying
+        // Show previous error if retrying.
         if ($issuance->status === 'retrying' && !empty($issuance->errormessage)) {
             echo html_writer::tag('small', ' (Previous error: ' . $issuance->errormessage . ')', ['class' => 'text-muted']);
         }
         flush();
 
-        // Queue an ad-hoc task for this credential
+        // Queue an ad-hoc task for this credential.
         $task = new \local_credentium\task\issue_credential();
         $task->set_custom_data(['issuanceid' => $issuance->id]);
         \core\task\manager::queue_adhoc_task($task);

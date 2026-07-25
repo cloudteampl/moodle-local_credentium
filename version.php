@@ -29,4 +29,4 @@ $plugin->version = 2026072501;
 $plugin->requires = 2024100700; // Moodle 4.5.0 (the claim banner + user-menu hooks need the Hooks API).
 $plugin->maturity = MATURITY_STABLE;
 $plugin->release = '3.0.1';
-$plugin->supported = [405, 500]; // Moodle 4.5 to 5.0
+$plugin->supported = [405, 500]; // Moodle 4.5 to 5.0.

@@ -24,8 +24,6 @@
 
 namespace local_credentium\event;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Event triggered when a credential issuance fails.
  */

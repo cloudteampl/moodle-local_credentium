@@ -22,8 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Log a message for Credentium plugin debugging.
  * Uses error_log to prevent leaking sensitive data in web output.
@@ -32,7 +30,7 @@ defined('MOODLE_INTERNAL') || die();
  * @param mixed $data Optional data to include (will be JSON encoded)
  */
 function local_credentium_log($message, $data = null) {
-    // Check if debug logging is enabled
+    // Check if debug logging is enabled.
     if (!get_config('local_credentium', 'debuglog')) {
         return;
     }
@@ -41,7 +39,9 @@ function local_credentium_log($message, $data = null) {
     if ($data !== null) {
         $logmessage .= ' | Data: ' . json_encode($data);
     }
-    error_log($logmessage);
+    // Deliberately error_log, not debugging(): debugging() renders into web output
+    // when "Display debug messages" is on, which could leak request diagnostics.
+    error_log($logmessage); // phpcs:ignore moodle.PHP.ForbiddenFunctions.FoundWithAlternative
 }
 
 /**
@@ -151,7 +151,7 @@ function local_credentium_encrypt_key($key) {
     try {
         return \core\encryption::encrypt($key);
     } catch (\Exception $e) {
-        // If encryption fails, log error and return plain text (fallback for compatibility)
+        // If encryption fails, log error and return plain text (fallback for compatibility).
         local_credentium_log('Encryption failed, storing plain text', ['error' => $e->getMessage()]);
         return $key;
     }
@@ -171,7 +171,7 @@ function local_credentium_decrypt_key($encryptedkey) {
     try {
         return \core\encryption::decrypt($encryptedkey);
     } catch (\Exception $e) {
-        // If decryption fails, assume it's already plain text (backward compatibility)
+        // If decryption fails, assume it's already plain text (backward compatibility).
         local_credentium_log('Decryption failed, assuming plain text', ['error' => $e->getMessage()]);
         return $encryptedkey;
     }
@@ -216,7 +216,7 @@ function local_credentium_get_category_config($categoryid) {
     $config = $DB->get_record('local_credentium_category_config', ['categoryid' => $categoryid]);
 
     if ($config && !empty($config->apikey)) {
-        // Decrypt API key on retrieval
+        // Decrypt API key on retrieval.
         $config->apikey = local_credentium_decrypt_key($config->apikey);
 
         local_credentium_log('get_category_config - Retrieved and decrypted', [
@@ -244,7 +244,7 @@ function local_credentium_get_category_config($categoryid) {
 function local_credentium_save_category_config($config) {
     global $DB;
 
-    // Encrypt API key before storage
+    // Encrypt API key before storage.
     if (!empty($config->apikey)) {
         $config->apikey = local_credentium_encrypt_key($config->apikey);
     }
@@ -275,9 +275,9 @@ function local_credentium_save_category_config($config) {
 function local_credentium_resolve_category_config($courseid) {
     global $DB;
 
-    // Check if category mode is enabled
+    // Check if category mode is enabled.
     if (!get_config('local_credentium', 'categorymode')) {
-        // Fall back to global config
+        // Fall back to global config.
         $globalconfig = (object)[
             'categoryid' => null,
             'apiurl' => get_config('local_credentium', 'apiurl'),
@@ -296,7 +296,7 @@ function local_credentium_resolve_category_config($courseid) {
         return $globalconfig;
     }
 
-    // Static cache to avoid repeated queries in same request
+    // Static cache to avoid repeated queries in same request.
     static $cache = [];
     if (defined('PHPUNIT_TEST') && PHPUNIT_TEST) {
         // A function-level static outlives the per-test database reset, so under
@@ -308,11 +308,11 @@ function local_credentium_resolve_category_config($courseid) {
         return $cache[$courseid];
     }
 
-    // Get course record
+    // Get course record.
     $course = $DB->get_record('course', ['id' => $courseid], 'id, category', MUST_EXIST);
 
     if (empty($course->category)) {
-        // Site-level course, use global config
+        // Site-level course, use global config.
         $result = (object)[
             'categoryid' => null,
             'apiurl' => get_config('local_credentium', 'apiurl'),
@@ -325,9 +325,9 @@ function local_credentium_resolve_category_config($courseid) {
         return $result;
     }
 
-    // Walk up category tree to find config
+    // Walk up category tree to find config.
     $category = $DB->get_record('course_categories', ['id' => $course->category], 'id, parent');
-    $maxdepth = 10; // Prevent infinite loops
+    $maxdepth = 10; // Prevent infinite loops.
     $depth = 0;
 
     local_credentium_log('resolve_category_config - Walking category tree', [
@@ -339,9 +339,9 @@ function local_credentium_resolve_category_config($courseid) {
         $catconfig = local_credentium_get_category_config($category->id);
 
         if ($catconfig && $catconfig->enabled) {
-            // Check if this category has custom credentials or uses global
+            // Check if this category has custom credentials or uses global.
             if (!empty($catconfig->apiurl) && !empty($catconfig->apikey)) {
-                // Category has custom credentials
+                // Category has custom credentials.
                 local_credentium_log('resolve_category_config - Found enabled category config with custom credentials', [
                     'courseid' => $courseid,
                     'categoryid' => $category->id,
@@ -351,7 +351,7 @@ function local_credentium_resolve_category_config($courseid) {
                 return $catconfig;
             } else {
                 // Category is enabled but uses global credentials
-                // Return global credentials with category's operational controls
+                // Return global credentials with category's operational controls.
                 local_credentium_log('resolve_category_config - Found enabled category using global credentials', [
                     'courseid' => $courseid,
                     'categoryid' => $category->id,
@@ -370,7 +370,7 @@ function local_credentium_resolve_category_config($courseid) {
             }
         }
 
-        // Move to parent category
+        // Move to parent category.
         if ($category->parent > 0) {
             $category = $DB->get_record('course_categories', ['id' => $category->parent], 'id, parent');
             $depth++;
@@ -379,7 +379,7 @@ function local_credentium_resolve_category_config($courseid) {
         }
     }
 
-    // No category config found, fall back to global
+    // No category config found, fall back to global.
     local_credentium_log('resolve_category_config - No category config found, using global', [
         'courseid' => $courseid,
         'depth_searched' => $depth,
@@ -408,7 +408,7 @@ function local_credentium_resolve_category_config($courseid) {
  * @return stdClass|null Complete course configuration or null if not configured/enabled
  */
 function local_credentium_resolve_course_config($courseid) {
-    // Get course-level settings (enabled, templateid, sendgrade)
+    // Get course-level settings (enabled, templateid, sendgrade).
     $courseconfig = local_credentium_get_course_config($courseid);
 
     if (!$courseconfig || empty($courseconfig->enabled)) {
@@ -417,13 +417,13 @@ function local_credentium_resolve_course_config($courseid) {
             'has_config' => $courseconfig ? 'yes' : 'no',
             'enabled' => $courseconfig->enabled ?? 0,
         ]);
-        return null; // Course not configured or explicitly disabled
+        return null; // Course not configured or explicitly disabled.
     }
 
-    // ALWAYS get API credentials from category or global (never from course level)
+    // ALWAYS get API credentials from category or global (never from course level).
     $categoryconfig = local_credentium_resolve_category_config($courseid);
 
-    // Merge: course settings (templateid, sendgrade) + category/global credentials (apiurl, apikey)
+    // Merge: course settings (templateid, sendgrade) + category/global credentials (apiurl, apikey).
     $courseconfig->apiurl = $categoryconfig->apiurl;
     $courseconfig->apikey = $categoryconfig->apikey;
     $courseconfig->paused = $categoryconfig->paused ?? 0;
@@ -448,7 +448,7 @@ function local_credentium_resolve_course_config($courseid) {
  * @param context_coursecat $context The category context
  */
 function local_credentium_extend_navigation_category_settings(navigation_node $navigation, context_coursecat $context) {
-    // Only show if category mode is enabled
+    // Only show if category mode is enabled.
     if (!get_config('local_credentium', 'categorymode')) {
         return;
     }

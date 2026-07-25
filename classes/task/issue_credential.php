@@ -24,8 +24,6 @@
 
 namespace local_credentium\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Adhoc task to issue a credential.
  */
@@ -80,7 +78,7 @@ class issue_credential extends \core\task\adhoc_task {
             return;
         }
 
-        // Get resolved course config with category inheritance
+        // Get resolved course config with category inheritance.
         mtrace("Resolving course configuration for course {$course->id}...");
         $courseconfig = local_credentium_resolve_course_config($course->id);
         if (!$courseconfig) {
@@ -97,7 +95,7 @@ class issue_credential extends \core\task\adhoc_task {
         mtrace("  - Category ID: " . ($courseconfig->categoryid ?? 'global'));
         mtrace("  - Paused: " . ($courseconfig->paused ?? 0));
 
-        // Check if category is paused
+        // Check if category is paused.
         if (!empty($courseconfig->paused)) {
             mtrace("Issuance paused for category {$courseconfig->categoryid}. Rescheduling in 1 hour.");
             $task = new issue_credential();
@@ -110,7 +108,7 @@ class issue_credential extends \core\task\adhoc_task {
             return;
         }
 
-        // Check rate limit
+        // Check rate limit.
         if (!empty($courseconfig->ratelimit)) {
             if (!$this->check_rate_limit($courseconfig->categoryid, $courseconfig->ratelimit)) {
                 mtrace("Rate limit exceeded for category {$courseconfig->categoryid}. Rescheduling in 10 minutes.");
@@ -225,7 +223,7 @@ class issue_credential extends \core\task\adhoc_task {
         $DB->update_record('local_credentium_issuances', $issuance);
 
         try {
-            // Initialize API client with category-specific credentials
+            // Initialize API client with category-specific credentials.
             mtrace("Initializing API client...");
             $client = new \local_credentium\api\client(
                 $courseconfig->apiurl ?? null,
@@ -237,14 +235,14 @@ class issue_credential extends \core\task\adhoc_task {
             // Prepare additional data.
             $additionaldata = [];
 
-            // Check if we should send grade
+            // Check if we should send grade.
             if ($courseconfig && !empty($courseconfig->sendgrade)) {
-                // Send raw grade score to Credentium API (not percentage)
+                // Send raw grade score to Credentium API (not percentage).
                 if (!is_null($issuance->grade)) {
                     $additionaldata['grade'] = (string)round($issuance->grade, 2);
                     mtrace("Sending raw grade to API: {$additionaldata['grade']}");
                 }
-                // If grade is null and sendgrade is enabled, we already handled retry above
+                // If grade is null and sendgrade is enabled, we already handled retry above.
             }
 
             // Add completion date.
@@ -287,14 +285,14 @@ class issue_credential extends \core\task\adhoc_task {
             mtrace("Error Message: {$errormessage}");
             mtrace("Error Code: {$errorcode}");
 
-            // For moodle_exception, access debuginfo as public property
+            // For moodle_exception, access debuginfo as public property.
             if ($e instanceof \moodle_exception) {
                 if (!empty($e->debuginfo)) {
                     mtrace("Debug Info:");
                     mtrace($e->debuginfo);
                 }
                 if (!empty($e->a)) {
-                    mtrace("Additional Info (a): " . (is_string($e->a) ? $e->a : print_r($e->a, true)));
+                    mtrace("Additional Info (a): " . (is_string($e->a) ? $e->a : json_encode($e->a)));
                 }
             }
 
@@ -312,7 +310,7 @@ class issue_credential extends \core\task\adhoc_task {
                         mtrace("======================");
                     }
                     if (!empty($prev->a)) {
-                        mtrace("Additional Info (a): " . (is_string($prev->a) ? $prev->a : print_r($prev->a, true)));
+                        mtrace("Additional Info (a): " . (is_string($prev->a) ? $prev->a : json_encode($prev->a)));
                     }
                 }
             } else {
@@ -370,7 +368,7 @@ class issue_credential extends \core\task\adhoc_task {
         $event = \local_credentium\event\credential_failed::create_from_issuance($issuance, $context, $errormessage);
         $event->trigger();
 
-        // Send notification after the event is triggered and state is persisted
+        // Send notification after the event is triggered and state is persisted.
         if ($user && $course) {
             $this->send_notification($user, $course, false);
         }

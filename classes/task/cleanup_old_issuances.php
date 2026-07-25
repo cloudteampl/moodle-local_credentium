@@ -24,8 +24,6 @@
 
 namespace local_credentium\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Cleanup old issuance records task.
  *

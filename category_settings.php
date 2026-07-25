@@ -62,6 +62,11 @@ if (!get_config('local_credentium', 'categorymode')) {
  * Category settings form.
  */
 class local_credentium_category_settings_form extends moodleform {
+    /**
+     * Form definition.
+     *
+     * @return void
+     */
     public function definition() {
         global $DB;
 
@@ -83,9 +88,9 @@ class local_credentium_category_settings_form extends moodleform {
         $mform->addHelpButton('enabled', 'category_enable_credentium', 'local_credentium');
 
         // Step 2: Choose credential source (only visible when enabled).
-        $global_apiurl = get_config('local_credentium', 'apiurl');
-        $global_apikey = get_config('local_credentium', 'apikey');
-        $global_configured = !empty($global_apiurl) && !empty($global_apikey);
+        $globalapiurl = get_config('local_credentium', 'apiurl');
+        $globalapikey = get_config('local_credentium', 'apikey');
+        $globalconfigured = !empty($globalapiurl) && !empty($globalapikey);
 
         $credentialoptions = [];
         $credentialoptions[] = $mform->createElement(
@@ -115,7 +120,7 @@ class local_credentium_category_settings_form extends moodleform {
         $mform->hideIf('credentialsource_group', 'enabled', 'notchecked');
 
         // Show global credentials status (when global is selected).
-        if ($global_configured) {
+        if ($globalconfigured) {
             $mform->addElement(
                 'static',
                 'globalcredentials_info',
@@ -163,10 +168,10 @@ class local_credentium_category_settings_form extends moodleform {
         $mform->hideIf('ratelimit', 'enabled', 'notchecked');
 
         // Test connection button (only for custom credentials that are saved).
-        $saved_config = local_credentium_get_category_config($categoryid);
-        $credentials_saved = !empty($saved_config) && !empty($saved_config->apiurl) && !empty($saved_config->apikey);
+        $savedconfig = local_credentium_get_category_config($categoryid);
+        $credentialssaved = !empty($savedconfig) && !empty($savedconfig->apiurl) && !empty($savedconfig->apikey);
 
-        if ($credentials_saved) {
+        if ($credentialssaved) {
             $testurl = new moodle_url(
                 '/local/credentium/testconnection.php',
                 ['categoryid' => $categoryid, 'sesskey' => sesskey()]
@@ -199,26 +204,33 @@ class local_credentium_category_settings_form extends moodleform {
         $this->add_action_buttons();
     }
 
+    /**
+     * Server-side validation.
+     *
+     * @param array $data Submitted data.
+     * @param array $files Submitted files.
+     * @return array Field name => error message map.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
         if (!empty($data['enabled'])) {
-            // Only validate custom credentials if custom source is selected
+            // Only validate custom credentials if custom source is selected.
             if (!empty($data['credentialsource']) && $data['credentialsource'] === 'custom') {
-                // Validate API URL
+                // Validate API URL.
                 if (empty($data['apiurl'])) {
                     $errors['apiurl'] = get_string('required');
                 } else if (!filter_var($data['apiurl'], FILTER_VALIDATE_URL)) {
                     $errors['apiurl'] = get_string('error:invalidapiurl', 'local_credentium');
                 }
 
-                // Validate API Key
+                // Validate API Key.
                 if (empty($data['apikey'])) {
                     $errors['apikey'] = get_string('required');
                 }
             }
 
-            // Validate rate limit if provided
+            // Validate rate limit if provided.
             if (!empty($data['ratelimit']) && $data['ratelimit'] < 1) {
                 $errors['ratelimit'] = get_string('error:invalidratelimit', 'local_credentium');
             }
@@ -241,7 +253,7 @@ $config = local_credentium_get_category_config($categoryid);
 if ($config) {
     local_credentium_log('Loading existing category config', ['categoryid' => $categoryid]);
 
-    // Determine credentialsource based on whether custom credentials are configured
+    // Determine credentialsource based on whether custom credentials are configured.
     if (!empty($config->apiurl) && !empty($config->apikey)) {
         $config->credentialsource = 'custom';
     } else {
@@ -262,12 +274,12 @@ if ($mform->is_cancelled()) {
     $config->categoryid = $data->categoryid ?? $categoryid;
     $config->enabled = !empty($data->enabled) ? 1 : 0;
 
-    // Only save custom credentials if custom source is selected
+    // Only save custom credentials if custom source is selected.
     if (!empty($data->credentialsource) && $data->credentialsource === 'custom') {
         $config->apiurl = !empty($data->apiurl) ? trim($data->apiurl) : null;
         $config->apikey = !empty($data->apikey) ? $data->apikey : null;
     } else {
-        // Clear custom credentials when using global
+        // Clear custom credentials when using global.
         $config->apiurl = null;
         $config->apikey = null;
     }

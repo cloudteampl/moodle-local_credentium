@@ -28,11 +28,22 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/filelib.php');
 
+/**
+ * HTTP client for the legacy Credentium issue API surface.
+ *
+ * Issues credentials and fetches/caches credential templates. The claim
+ * feature's v2 surface (status polls, claim links) lives in {@see claim_client}.
+ */
 class client {
+    /** @var string|null Base API URL. */
     private $apiurl;
+    /** @var string|null API key sent as the API-KEY header. */
     private $apikey;
+    /** @var int|null Category id used for template cache isolation (null = global cache). */
     private $categoryid;
-    private const MAX_RETRIES = 1; // Set to 1 for easier debugging.
+    /** @var int Attempts per request. Set to 1 for easier debugging. */
+    private const MAX_RETRIES = 1;
+    /** @var int Seconds between retry attempts. */
     private const RETRY_DELAY = 2;
 
     /**
@@ -49,31 +60,37 @@ class client {
         $this->apikey = $apikey ?: local_credentium_get_global_apikey();
         $this->categoryid = $categoryid;
 
-        // Validate API URL
+        // Validate API URL.
         if ($this->apiurl && !filter_var($this->apiurl, FILTER_VALIDATE_URL)) {
             throw new \moodle_exception('invalidapiurl', 'local_credentium');
         }
 
         // Ensure API key is a string - use PARAM_RAW_TRIMMED to preserve dots in the key
-        // API keys use format: cred_xxxxx.yyyyy where the dot separates public ID from secret
+        // API keys use format: cred_xxxxx.yyyyy where the dot separates public ID from secret.
         if ($this->apikey) {
             $this->apikey = clean_param($this->apikey, PARAM_RAW_TRIMMED);
         }
 
-        // Validate categoryid if provided
+        // Validate categoryid if provided.
         if ($this->categoryid !== null) {
             $this->categoryid = clean_param($this->categoryid, PARAM_INT);
         }
     }
 
+    /**
+     * Fetch the credential templates, from the per-category cache when fresh.
+     *
+     * @param bool $activeonly Only return templates that carry assessments.
+     * @return array List of template objects.
+     */
     public function get_templates($activeonly = true) {
-        // Try to get from cache first
+        // Try to get from cache first.
         $cachedtemplates = $this->get_cached_templates($activeonly);
         if ($cachedtemplates !== null) {
             return $cachedtemplates;
         }
 
-        // Cache miss, fetch from API
+        // Cache miss, fetch from API.
         $params = $activeonly ? ['assessmentsOnly' => 'true'] : [];
         try {
             $response = $this->request('GET', '/credential-template', $params);
@@ -86,6 +103,15 @@ class client {
         }
     }
 
+    /**
+     * Request the issuance of one credential for one user.
+     *
+     * @param string $templateid Credentium template id.
+     * @param \stdClass $user Recipient (email, firstname, lastname are sent).
+     * @param \stdClass $course Course the credential is for (not transmitted).
+     * @param array $additionaldata Optional extras; 'grade' is sent when present.
+     * @return \stdClass Normalised response carrying a credential_id property.
+     */
     public function issue_credential($templateid, $user, $course, $additionaldata = []) {
         $data = [
             'credentialTemplateId' => $templateid,
@@ -94,7 +120,7 @@ class client {
             'personFamilyName' => $user->lastname,
         ];
 
-        // Add grade only if provided
+        // Add grade only if provided.
         if (isset($additionaldata['grade'])) {
             $data['grade'] = (string)$additionaldata['grade'];
         }
@@ -117,6 +143,15 @@ class client {
         }
     }
 
+    /**
+     * Build and execute one API request and decode the JSON response.
+     *
+     * @param string $method HTTP method (GET or POST).
+     * @param string $endpoint Path beginning with '/'.
+     * @param array $params Query parameters.
+     * @param array|null $data Request body (JSON-encoded when present).
+     * @return mixed Decoded response ([] for an empty successful body).
+     */
     private function request($method, $endpoint, $params = [], $data = null) {
         if (empty($this->apiurl) || empty($this->apikey)) {
             throw new \moodle_exception('apinotconfigured', 'local_credentium');
@@ -133,7 +168,7 @@ class client {
             'Accept: application/json',
         ];
 
-        // Create a fresh curl instance for each request to avoid state issues
+        // Create a fresh curl instance for each request to avoid state issues.
         $curl = new \curl(['debug' => false]);
 
         $options = [
@@ -142,11 +177,11 @@ class client {
             'CURLOPT_TIMEOUT' => 30,
         ];
 
-        // Log API request without sensitive data
+        // Log API request without sensitive data.
         require_once(__DIR__ . '/../../lib.php');
         local_credentium_log("API Request: $method " . parse_url($url, PHP_URL_PATH));
 
-        // Use appropriate method based on request type
+        // Use appropriate method based on request type.
         if ($method === 'POST') {
             $curl->setopt($options);
             $postdata = json_encode($data);
@@ -179,7 +214,7 @@ class client {
             $debuginfo .= "Request Headers:\n" . s($info['request_header'] ?? 'Not available') . "\n\n";
             $debuginfo .= "Raw Response Body:\n" . s($responsebody);
 
-            // Log the error details immediately so they appear in mtrace output
+            // Log the error details immediately so they appear in mtrace output.
             local_credentium_log("API Request Failed", [
                 'url' => parse_url($url, PHP_URL_PATH),
                 'method' => $method,
@@ -189,17 +224,18 @@ class client {
             mtrace("URL: {$url}");
             mtrace("Response Body: " . s($responsebody));
 
-            // Try to parse error response for better error messages
+            // Try to parse error response for better error messages.
             $errormessage = "API request failed with HTTP code {$httpcode}.";
             if (!empty($responsebody)) {
                 $decoded = json_decode($responsebody);
                 if (json_last_error() === JSON_ERROR_NONE && isset($decoded->errors)) {
-                    // Extract validation errors
+                    // Extract validation errors.
                     if (isset($decoded->errors->Grade) && is_array($decoded->errors->Grade)) {
-                        $errormessage = "Grade field is required by this credential template. Please enable 'Send grade with credential' in the course settings.";
+                        $errormessage = "Grade field is required by this credential template. "
+                            . "Please enable 'Send grade with credential' in the course settings.";
                         mtrace("SOLUTION: Enable 'Send grade with credential' in course Credentium settings.");
                     } else {
-                        // Generic validation error
+                        // Generic validation error.
                         $errormessage = "Validation error: " . json_encode($decoded->errors);
                     }
                 }
@@ -226,16 +262,16 @@ class client {
             $DB->delete_records('local_credentium_templates_cache', ['categoryid' => $this->categoryid]);
         }
 
-        // Cache new templates
+        // Cache new templates.
         foreach ($templates as $template) {
             $record = new \stdClass();
             $record->templateid = $template->id ?? '';
-            // Use title from API, fallback to name if not available
+            // Use title from API, fallback to name if not available.
             $record->name = $template->title ?? $template->name ?? '';
             $record->description = $template->description ?? '';
             $record->active = isset($template->active) ? (int)$template->active : 1;
             $record->data = json_encode($template);
-            $record->categoryid = $this->categoryid; // Store category for isolation
+            $record->categoryid = $this->categoryid; // Store category for isolation.
             $record->timecached = time();
 
             $DB->insert_record('local_credentium_templates_cache', $record);
@@ -252,7 +288,7 @@ class client {
         global $DB;
 
         // Check if cache exists for this category and is not older than 1 hour
-        // Handle NULL categoryid comparison for cross-database compatibility
+        // Handle NULL categoryid comparison for cross-database compatibility.
         if ($this->categoryid === null) {
             $cachetime = $DB->get_field_sql(
                 "SELECT MAX(timecached) FROM {local_credentium_templates_cache} WHERE categoryid IS NULL"
@@ -285,7 +321,7 @@ class client {
             $templates = [];
             foreach ($records as $record) {
                 $template = json_decode($record->data);
-                // Ensure the cached template has a title property for consistency
+                // Ensure the cached template has a title property for consistency.
                 if (!isset($template->title) && isset($record->name)) {
                     $template->title = $record->name;
                 }
@@ -295,6 +331,6 @@ class client {
             return $templates;
         }
 
-        return null; // Cache miss
+        return null; // Cache miss.
     }
 }

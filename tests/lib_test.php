@@ -124,7 +124,7 @@ class lib_test extends \advanced_testcase {
         $this->assertNotNull($retrieved);
         $this->assertEquals(1, $retrieved->enabled);
         $this->assertEquals('https://test.credentium.com', $retrieved->apiurl);
-        $this->assertEquals('test-key-123', $retrieved->apikey); // Should be decrypted
+        $this->assertEquals('test-key-123', $retrieved->apikey); // Should be decrypted.
         $this->assertEquals(100, $retrieved->ratelimit);
     }
 
@@ -170,7 +170,7 @@ class lib_test extends \advanced_testcase {
         // resolver deliberately answers with the global configuration.
         set_config('categorymode', 1, 'local_credentium');
 
-        // Create category hierarchy: parent -> child
+        // Create category hierarchy: parent -> child.
         $parent = $this->getDataGenerator()->create_category();
         $child = $this->getDataGenerator()->create_category(['parent' => $parent->id]);
 

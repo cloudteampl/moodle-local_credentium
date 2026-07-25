@@ -53,6 +53,11 @@ if (!get_config('local_credentium', 'enabled')) {
  * Course settings form.
  */
 class local_credentium_course_settings_form extends moodleform {
+    /**
+     * Form definition.
+     *
+     * @return void
+     */
     public function definition() {
         global $DB;
 
@@ -139,7 +144,7 @@ class local_credentium_course_settings_form extends moodleform {
         // Send grade checkbox.
         $mform->addElement('checkbox', 'sendgrade', get_string('sendgrade', 'local_credentium'));
         $mform->addHelpButton('sendgrade', 'sendgrade', 'local_credentium');
-        $mform->setDefault('sendgrade', 1); // Default to sending grade
+        $mform->setDefault('sendgrade', 1); // Default to sending grade.
         $mform->disabledIf('sendgrade', 'enabled', 'notchecked');
 
         // Important information about automatic issuance.
@@ -218,6 +223,13 @@ class local_credentium_course_settings_form extends moodleform {
         }
     }
 
+    /**
+     * Server-side validation.
+     *
+     * @param array $data Submitted data.
+     * @param array $files Submitted files.
+     * @return array Field name => error message map.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
@@ -286,7 +298,7 @@ $config = local_credentium_get_course_config($courseid);
 if ($config) {
     local_credentium_log('Loading existing course config', ['courseid' => $courseid]);
 
-    // Ensure templateid is properly set for form
+    // Ensure templateid is properly set for form.
     $formdata = (array)$config;
     if (!empty($formdata['templateid'])) {
         $formdata['templateid'] = (string)$formdata['templateid'];
@@ -303,13 +315,13 @@ if ($mform->is_cancelled()) {
 
     // Prepare config object.
     $config = new stdClass();
-    $config->courseid = $data->courseid ?? $courseid; // Use form data courseid, fallback to URL param
+    $config->courseid = $data->courseid ?? $courseid; // Use form data courseid, fallback to URL param.
     $config->enabled = !empty($data->enabled) ? 1 : 0;
     $config->templateid = !empty($data->templateid) ? $data->templateid : null;
     $config->sendgrade = !empty($data->sendgrade) ? 1 : 0;
-    $config->mingrade = null; // Not used anymore, but kept for DB compatibility
-    $config->issuancetrigger = 'completion'; // Always use completion trigger
-    $config->inherit_category = isset($data->inherit_category) ? (int)$data->inherit_category : 1; // Default to 1
+    $config->mingrade = null; // Not used anymore, but kept for DB compatibility.
+    $config->issuancetrigger = 'completion'; // Always use completion trigger.
+    $config->inherit_category = isset($data->inherit_category) ? (int)$data->inherit_category : 1; // Default to 1.
 
     // Save config.
     $success = local_credentium_save_course_config($config);
