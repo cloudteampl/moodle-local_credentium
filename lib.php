@@ -80,7 +80,7 @@ function local_credentium_get_course_config($courseid) {
  * Save course configuration for Credentium.
  *
  * @param stdClass $config The configuration object
- * @return bool Success status
+ * @return int|bool New record id on insert, true on update
  */
 function local_credentium_save_course_config($config) {
     global $DB;
@@ -211,7 +211,7 @@ function local_credentium_get_category_config($categoryid) {
  * Save category configuration for Credentium.
  *
  * @param stdClass $config The configuration object
- * @return bool Success status
+ * @return int|bool New record id on insert, true on update
  */
 function local_credentium_save_category_config($config) {
     global $DB;

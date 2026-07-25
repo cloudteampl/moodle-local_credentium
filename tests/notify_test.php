@@ -188,7 +188,7 @@ final class notify_test extends \advanced_testcase {
         $this->assertCount(0, $hook->get_navitems());
     }
 
-    public function test_no_menu_entry_when_the_plugin_is_disabled(): void {
+    public function test_no_menu_entry_when_claim_reminders_are_disabled(): void {
         set_config('claimenabled', 0, 'local_credentium');
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);

@@ -43,7 +43,7 @@ class lib_test extends \advanced_testcase {
     /**
      * Test encryption and decryption of API keys.
      */
-    public function test_encrypt_decrypt_apikey() {
+    public function test_encrypt_decrypt_key() {
         $this->resetAfterTest();
 
         $original = 'test-api-key-12345';
@@ -143,8 +143,11 @@ class lib_test extends \advanced_testcase {
         $config->apikey = 'parent-key';
         local_credentium_save_category_config($config);
 
-        // Resolve child category (should inherit from parent).
-        $resolved = local_credentium_resolve_category_config($child->id);
+        // The resolver takes a COURSE id and walks up from the course's category.
+        $course = $this->getDataGenerator()->create_course(['category' => $child->id]);
+
+        // Resolve for a course in the child category (should inherit from parent).
+        $resolved = local_credentium_resolve_category_config($course->id);
         $this->assertNotNull($resolved);
         $this->assertEquals($parent->id, $resolved->categoryid);
         $this->assertEquals('https://parent.credentium.com', $resolved->apiurl);
