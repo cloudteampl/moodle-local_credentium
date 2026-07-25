@@ -1,0 +1,115 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Hook callbacks for local_credentium (claim reminder surfaces).
+ *
+ * @package    local_credentium
+ * @copyright  2025 CloudTeam Sp. z o.o.
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace local_credentium\local;
+
+/**
+ * Output hook callbacks.
+ */
+class hook_callbacks {
+    /**
+     * Inject the "unclaimed credential" reminder banner at the top of the page body.
+     *
+     * Runs on every page, so it must stay cheap: a single cached, indexed lookup and
+     * no network access. The scheduled task and user actions do the heavy lifting.
+     *
+     * @param \core\hook\output\before_standard_top_of_body_html_generation $hook The output hook.
+     * @return void
+     */
+    public static function before_standard_top_of_body_html(
+        \core\hook\output\before_standard_top_of_body_html_generation $hook
+    ): void {
+        global $USER, $OUTPUT, $CFG;
+
+        if (during_initial_install() || !isloggedin() || isguestuser()) {
+            return;
+        }
+
+        require_once($CFG->dirroot . '/local/credentium/lib.php');
+        if (!local_credentium_claim_enabled() || !local_credentium_show_banner()) {
+            return;
+        }
+
+        if (!has_capability('local/credentium:claim', \context_user::instance($USER->id))) {
+            return;
+        }
+
+        $count = claimable::count_for_user((int) $USER->id);
+        if ($count < 1) {
+            return;
+        }
+
+        $banner = new \local_credentium\output\banner($count);
+        $hook->add_html($OUTPUT->render_from_template('local_credentium/banner', $banner->export_for_template($OUTPUT)));
+    }
+
+    /**
+     * Add a "My credentials (N)" entry to the user menu (the avatar dropdown).
+     *
+     * Unlike the banner this is not dismissible and does not depend on the "show
+     * banner" setting: it is the standing pointer so a learner can always find their
+     * credentials. It appears for anyone who has any credential to see, and carries a
+     * count only while something is actually waiting to be claimed — gating the entry
+     * itself on that count made it disappear the moment a learner claimed the last
+     * one, removing the only route back to what they had just collected. Learners who
+     * have never been issued anything still get no entry, so the menu stays clean.
+     *
+     * @param \core_user\hook\extend_user_menu $hook The user-menu hook.
+     * @return void
+     */
+    public static function extend_user_menu(\core_user\hook\extend_user_menu $hook): void {
+        global $USER, $CFG;
+
+        if (during_initial_install() || !isloggedin() || isguestuser()) {
+            return;
+        }
+
+        require_once($CFG->dirroot . '/local/credentium/lib.php');
+        if (!local_credentium_claim_enabled()) {
+            return;
+        }
+
+        if (!has_capability('local/credentium:claim', \context_user::instance($USER->id))) {
+            return;
+        }
+
+        if (claimable::count_visible_for_user((int) $USER->id) < 1) {
+            return;
+        }
+
+        $waiting = claimable::count_claimable_for_user((int) $USER->id);
+        $title = $waiting > 0
+            ? get_string('nav_mycredentials_count', 'local_credentium', $waiting)
+            : get_string('nav_mycredentials', 'local_credentium');
+
+        $hook->add_navitem((object) [
+            'itemtype' => 'link',
+            'url' => new \moodle_url('/local/credentium/mycredentials.php'),
+            'title' => $title,
+            'titleidentifier' => $waiting > 0
+                ? 'nav_mycredentials_count,local_credentium'
+                : 'nav_mycredentials,local_credentium',
+        ]);
+    }
+}
