@@ -147,7 +147,12 @@ class client {
      * @param string $externalidfield The "person identifier" setting ('' sends none).
      * @return array
      */
-    public static function build_issue_payload($templateid, \stdClass $user, array $additionaldata, string $externalidfield): array {
+    public static function build_issue_payload(
+        $templateid,
+        \stdClass $user,
+        array $additionaldata,
+        string $externalidfield
+    ): array {
         $data = [
             'credentialTemplateId' => $templateid,
             'personEmail' => $user->email,
