@@ -81,6 +81,7 @@ class provider implements
             'credentium_api',
             [
                 'email' => 'privacy:metadata:credentium_api:email',
+                'externalid' => 'privacy:metadata:credentium_api:externalid',
                 'firstname' => 'privacy:metadata:credentium_api:firstname',
                 'lastname' => 'privacy:metadata:credentium_api:lastname',
                 'coursename' => 'privacy:metadata:credentium_api:coursename',

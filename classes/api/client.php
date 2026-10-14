@@ -107,23 +107,18 @@ class client {
      * Request the issuance of one credential for one user.
      *
      * @param string $templateid Credentium template id.
-     * @param \stdClass $user Recipient (email, firstname, lastname are sent).
+     * @param \stdClass $user Recipient (email, firstname, lastname, and the configured identifier are sent).
      * @param \stdClass $course Course the credential is for (not transmitted).
      * @param array $additionaldata Optional extras; 'grade' is sent when present.
      * @return \stdClass Normalised response carrying a credential_id property.
      */
     public function issue_credential($templateid, $user, $course, $additionaldata = []) {
-        $data = [
-            'credentialTemplateId' => $templateid,
-            'personEmail' => $user->email,
-            'personGivenName' => $user->firstname,
-            'personFamilyName' => $user->lastname,
-        ];
-
-        // Add grade only if provided.
-        if (isset($additionaldata['grade'])) {
-            $data['grade'] = (string)$additionaldata['grade'];
-        }
+        $data = self::build_issue_payload(
+            $templateid,
+            $user,
+            $additionaldata,
+            (string) get_config('local_credentium', 'externalidfield')
+        );
 
         try {
             $response = $this->request('POST', '/credential/issue', [], $data);
@@ -141,6 +136,37 @@ class client {
         } catch (\Exception $e) {
             throw new \moodle_exception('issuancefailed', 'local_credentium', '', $e->getMessage(), $e);
         }
+    }
+
+    /**
+     * Body of one issue request.
+     *
+     * @param string $templateid Credentium template id.
+     * @param \stdClass $user Recipient (email, firstname, lastname, and the configured identifier field).
+     * @param array $additionaldata Optional extras; 'grade' is sent when present.
+     * @param string $externalidfield The "person identifier" setting ('' sends none).
+     * @return array
+     */
+    public static function build_issue_payload($templateid, \stdClass $user, array $additionaldata, string $externalidfield): array {
+        $data = [
+            'credentialTemplateId' => $templateid,
+            'personEmail' => $user->email,
+            'personGivenName' => $user->firstname,
+            'personFamilyName' => $user->lastname,
+        ];
+
+        // The same identifier makes Credentium treat issuances as one person, even across e-mail changes.
+        $externalid = \local_credentium\local\person_external_id::from_user($user, $externalidfield);
+        if ($externalid !== null) {
+            $data['personExternalId'] = $externalid;
+        }
+
+        // Add grade only if provided.
+        if (isset($additionaldata['grade'])) {
+            $data['grade'] = (string)$additionaldata['grade'];
+        }
+
+        return $data;
     }
 
     /**
