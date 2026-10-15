@@ -44,6 +44,9 @@ class issue_credential extends \core\task\adhoc_task {
         global $DB, $CFG;
 
         require_once($CFG->dirroot . '/local/credentium/lib.php');
+        // The completion date lookup below needs completion_info; a dedicated adhoc task runner
+        // does not load it on its own.
+        require_once($CFG->libdir . '/completionlib.php');
 
         mtrace('Credentium: Starting issue_credential task execution');
 

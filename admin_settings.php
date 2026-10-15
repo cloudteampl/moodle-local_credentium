@@ -255,7 +255,8 @@ $mform = new local_credentium_admin_settings_form();
 // Load existing config.
 $config = new stdClass();
 $config->enabled = get_config('local_credentium', 'enabled');
-$config->apiurl = get_config('local_credentium', 'apiurl');
+// Unset config is false, which the text field would show as "0".
+$config->apiurl = (string) get_config('local_credentium', 'apiurl');
 // The API key is deliberately NOT loaded into the form: the field is
 // write-only, so the decrypted secret never round-trips through page HTML.
 $config->categorymode = get_config('local_credentium', 'categorymode');
