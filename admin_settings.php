@@ -131,6 +131,17 @@ class local_credentium_admin_settings_form extends moodleform {
         }
         $mform->hideIf('testconnection', 'enabled', 'notchecked');
 
+        // Person identifier sent with each issuance (optional).
+        $mform->addElement(
+            'select',
+            'externalidfield',
+            get_string('externalidfield', 'local_credentium'),
+            \local_credentium\local\person_external_id::options()
+        );
+        $mform->setType('externalidfield', PARAM_ALPHA);
+        $mform->addHelpButton('externalidfield', 'externalidfield', 'local_credentium');
+        $mform->hideIf('externalidfield', 'enabled', 'notchecked');
+
         // Claim reminders (absorbed from the former Credentium Claim plugin).
         $mform->addElement('header', 'claimsettings', get_string('claimsettings_heading', 'local_credentium'));
         $mform->setExpanded('claimsettings', true);
@@ -244,10 +255,12 @@ $mform = new local_credentium_admin_settings_form();
 // Load existing config.
 $config = new stdClass();
 $config->enabled = get_config('local_credentium', 'enabled');
-$config->apiurl = get_config('local_credentium', 'apiurl');
+// Unset config is false, which the text field would show as "0".
+$config->apiurl = (string) get_config('local_credentium', 'apiurl');
 // The API key is deliberately NOT loaded into the form: the field is
 // write-only, so the decrypted secret never round-trips through page HTML.
 $config->categorymode = get_config('local_credentium', 'categorymode');
+$config->externalidfield = (string) get_config('local_credentium', 'externalidfield');
 $config->claimenabled = get_config('local_credentium', 'claimenabled');
 // Same unset-means-on default the banner hook applies at render time.
 $config->showbanner = local_credentium_show_banner() ? 1 : 0;
@@ -274,6 +287,11 @@ if ($mform->is_cancelled()) {
         local_credentium_set_global_apikey($data->apikey);
     }
     set_config('categorymode', !empty($data->categorymode) ? 1 : 0, 'local_credentium');
+    set_config(
+        'externalidfield',
+        \local_credentium\local\person_external_id::normalise_field((string) ($data->externalidfield ?? '')),
+        'local_credentium'
+    );
     set_config('claimenabled', !empty($data->claimenabled) ? 1 : 0, 'local_credentium');
     set_config('showbanner', !empty($data->showbanner) ? 1 : 0, 'local_credentium');
     // An empty interval means "leave the hand-edited cron schedule alone".
