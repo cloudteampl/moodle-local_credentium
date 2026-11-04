@@ -1,6 +1,6 @@
 # Credentium® Integration for Moodle
 
-**Version:** 3.0.0
+**Version:** 3.2.1
 **Author:** CloudTeam Sp. z o.o.
 **License:** GNU GPL v3 or later (Plugin is FREE)
 **Moodle Compatibility:** 4.5 LTS, 5.1, 5.2 and 5.3 LTS (5.0 is end-of-life and no longer tested)
