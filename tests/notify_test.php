@@ -147,17 +147,18 @@ final class notify_test extends \advanced_testcase {
         // Nothing to claim yet: no menu clutter.
         $empty = new \core_user\hook\extend_user_menu();
         hook_callbacks::extend_user_menu($empty);
-        $this->assertCount(0, $empty->get_navitems());
+        $this->assertCount(0, $this->menu_items($empty));
 
         claimable::record_candidate($user->id, 'key-1', null, null);
         claimable::apply_remote_status($this->row($user->id, 'key-1'), 'issued');
 
         $hook = new \core_user\hook\extend_user_menu();
         hook_callbacks::extend_user_menu($hook);
-        $items = $hook->get_navitems();
+        $items = $this->menu_items($hook);
         $this->assertCount(1, $items);
         $this->assertSame('link', $items[0]->itemtype);
         $this->assertStringContainsString('(1)', $items[0]->title);
+        $this->assertStringContainsString('/local/credentium/mycredentials.php', (string) $items[0]->url);
     }
 
     public function test_user_menu_entry_survives_a_dismissed_banner(): void {
@@ -171,7 +172,7 @@ final class notify_test extends \advanced_testcase {
 
         $hook = new \core_user\hook\extend_user_menu();
         hook_callbacks::extend_user_menu($hook);
-        $this->assertCount(1, $hook->get_navitems());
+        $this->assertCount(1, $this->menu_items($hook));
     }
 
     public function test_the_master_switch_alone_disables_the_claim_surfaces(): void {
@@ -185,7 +186,7 @@ final class notify_test extends \advanced_testcase {
 
         $hook = new \core_user\hook\extend_user_menu();
         hook_callbacks::extend_user_menu($hook);
-        $this->assertCount(0, $hook->get_navitems());
+        $this->assertCount(0, $this->menu_items($hook));
     }
 
     public function test_no_menu_entry_when_claim_reminders_are_disabled(): void {
@@ -197,7 +198,35 @@ final class notify_test extends \advanced_testcase {
 
         $hook = new \core_user\hook\extend_user_menu();
         hook_callbacks::extend_user_menu($hook);
-        $this->assertCount(0, $hook->get_navitems());
+        $this->assertCount(0, $this->menu_items($hook));
+    }
+
+    /**
+     * Read the items a hook collected, whatever Moodle version we run on.
+     *
+     * Moodle 5.3 replaced the stdClass items (add_navitem / get_navitems, now deprecated
+     * and failing PHPUnit) with user_action_menu objects (add_menu_item / get_menu_items).
+     * Both shapes are normalised to objects with itemtype, title and url.
+     *
+     * @param \core_user\hook\extend_user_menu $hook The hook after the callback ran.
+     * @return \stdClass[]
+     */
+    private function menu_items(\core_user\hook\extend_user_menu $hook): array {
+        global $PAGE;
+
+        if (!method_exists($hook, 'get_menu_items')) {
+            return array_values($hook->get_navitems());
+        }
+
+        $renderer = $PAGE->get_renderer('core');
+        return array_map(static function ($item) use ($renderer): \stdClass {
+            $exported = $item->export_for_template($renderer);
+            return (object) [
+                'itemtype' => $exported['itemtype'],
+                'title' => $exported['title'] ?? '',
+                'url' => $exported['url'] ?? '',
+            ];
+        }, $hook->get_menu_items());
     }
 
     /**
