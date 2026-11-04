@@ -126,12 +126,3 @@ jobs:
       - name: PHPUnit tests
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phpunit
-
-      # TEMPORARY diagnostic: print what the PHPUnit deprecations/notices actually are.
-      - name: PHPUnit deprecation details (temporary)
-        continue-on-error: true
-        if: ${{ !cancelled() }}
-        run: |
-          cd moodle
-          CONF=$(find . -path '*/local/credentium/phpunit.xml' | head -1)
-          vendor/bin/phpunit --configuration "$CONF" --display-phpunit-deprecations --display-deprecations --display-notices --display-warnings || true
