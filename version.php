@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_credentium';
-$plugin->version = 2026110400;
+$plugin->version = 2026110401;
 $plugin->requires = 2024100700; // Moodle 4.5.0 (the claim banner + user-menu hooks need the Hooks API).
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '3.2.0';
-$plugin->supported = [405, 503]; // Moodle 4.5 to 5.3.
+$plugin->release = '3.2.1';
+$plugin->supported = [405, 503]; // Moodle 4.5 to 5.3 (range only; 5.0 is end-of-life and no longer tested).

@@ -5,6 +5,15 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-11-04
+
+### Changed
+- **Moodle 5.0 is no longer supported or tested.** It reached end of life on
+  5 October 2026. Supported: Moodle 4.5 LTS and 5.1–5.3. The plugin's
+  `supported` range stays 4.5–5.3 (Moodle declares it as a min–max range), so it
+  still installs on 5.0, but we no longer test or fix issues there. No code
+  changes.
+
 ## [3.2.0] - 2026-11-04
 
 ### Added
