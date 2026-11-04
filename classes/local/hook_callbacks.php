@@ -103,9 +103,18 @@ class hook_callbacks {
             ? get_string('nav_mycredentials_count', 'local_credentium', $waiting)
             : get_string('nav_mycredentials', 'local_credentium');
 
+        $url = new \moodle_url('/local/credentium/mycredentials.php');
+
+        // Moodle 5.3 (MDL-88938) deprecated add_navitem() in favour of typed menu items.
+        // Prefer the new API where it exists; 4.5-5.2 only know the stdClass form.
+        if (method_exists($hook, 'add_menu_item')) {
+            $hook->add_menu_item(new \core_user\output\user_action_menu\link($url, $title));
+            return;
+        }
+
         $hook->add_navitem((object) [
             'itemtype' => 'link',
-            'url' => new \moodle_url('/local/credentium/mycredentials.php'),
+            'url' => $url,
             'title' => $title,
             'titleidentifier' => $waiting > 0
                 ? 'nav_mycredentials_count,local_credentium'
