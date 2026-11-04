@@ -5,6 +5,24 @@ All notable changes to the Credentium® Integration plugin will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-11-04
+
+### Added
+- **Support for Moodle 5.1, 5.2 and 5.3 LTS.** The plugin is now tested in CI on
+  Moodle 4.5 LTS, 5.0, 5.1, 5.2 and 5.3 (PHP 8.2–8.4). `version.php` declares
+  support for 4.5–5.3; the minimum required version is unchanged (4.5).
+
+### Fixed
+- **No deprecation notice on Moodle 5.3.** The "My credentials" user-menu entry
+  used `extend_user_menu::add_navitem()`, deprecated in Moodle 5.3 (MDL-88938).
+  On 5.3 the plugin now uses the typed `add_menu_item()` API; 4.5–5.2 keep the
+  previous call, so the entry looks and behaves the same everywhere.
+
+### Changed
+- CI matrix widened to Moodle 5.1–5.3 and PostgreSQL 17 for the 5.x jobs
+  (Moodle 5.3 requires PostgreSQL 17+). User-menu tests no longer depend on the
+  deprecated `get_navitems()`.
+
 ## [3.1.0] - 2026-10-15
 
 ### Added

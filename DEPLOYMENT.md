@@ -74,7 +74,7 @@ You can also trigger the build manually:
 - [ ] **Staging Test**: Test upgrade in staging environment first
 - [ ] **Version Check**: Verify version number in `version.php`
 - [ ] **Changelog**: Update release notes with changes
-- [ ] **Dependencies**: Ensure Moodle 4.5+ compatibility
+- [ ] **Dependencies**: Ensure Moodle 4.5–5.3 compatibility
 
 ### Building Package
 
@@ -210,7 +210,7 @@ When preparing a new release:
 **Solution**:
 - Verify ZIP structure with `unzip -l`
 - Check version.php is present
-- Ensure compatible Moodle version (4.5+)
+- Ensure compatible Moodle version (4.5–5.3)
 
 ## Security Considerations
 

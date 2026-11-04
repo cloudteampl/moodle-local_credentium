@@ -134,4 +134,4 @@ jobs:
         run: |
           cd moodle
           CONF=$(find . -path '*/local/credentium/phpunit.xml' | head -1)
-          vendor/bin/phpunit --configuration "$CONF" --display-deprecations --display-notices --display-warnings || true
+          vendor/bin/phpunit --configuration "$CONF" --display-phpunit-deprecations --display-deprecations --display-notices --display-warnings || true
